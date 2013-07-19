@@ -130,9 +130,34 @@ namespace KeePass.DataExchange
 				try { s = IOConnection.OpenRead(iocIn); }
 				catch(Exception exFile)
 				{
-					MessageService.ShowWarning(iocIn.GetDisplayName(), exFile);
-					bAllSuccess = false;
-					continue;
+										// Transacted-file operations can leave behind intact *.kdbx.tmp files when
+										// the file rename doesn't get completed (can happen easily with slow/unreliable
+										// remote collections. We check if that's the case here and fix the situation if
+										// an kdbx file does *not* exist (to avoid possibly overwriting good data with bad
+										// data (i.e. an interrupted kdbx.tmp write).
+
+										// Make a copy of the IOC like FileTransactionEx.cs:Initialize does
+										IOConnectionInfo iocTemp = iocIn.CloneDeep();
+										iocTemp.Path += FileTransactionEx.StrTempSuffix;
+
+										if (IOConnection.FileExists(iocTemp) && !IOConnection.FileExists(iocIn))
+										{
+												// Try and rename iocTemp to ioc.Path, then retry file opening.
+												IOConnection.RenameFile(iocTemp, iocIn);
+												try { s = IOConnection.OpenRead(iocIn); }
+												catch(Exception nexFile)
+												{
+														MessageService.ShowWarning(iocIn.GetDisplayName(), nexFile);
+														bAllSuccess = false;
+														continue;
+												}
+										}
+										else
+										{
+							MessageService.ShowWarning(iocIn.GetDisplayName(), exFile);
+							bAllSuccess = false;
+							continue;
+										}
 				}
 				if(s == null) { Debug.Assert(false); bAllSuccess = false; continue; }
 
