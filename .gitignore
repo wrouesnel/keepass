@@ -1,4 +1,12 @@
 Build/KeePass/*/*
+Build/KeePass/*
+
 Build/KeePassLib/*/*
+Build/KeePassLib/*
+
 Build/KeePassLib_Distrib/*/*
+Build/KeePassLib_Distrib/*
+
 Build/KeePassLibSD_Distrib/*/*
+Build/KeePassLibSD_Distrib/*
+
