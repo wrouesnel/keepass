@@ -96,17 +96,10 @@ namespace KeePassLib.Serialization
 			bool bEfsEncrypted = false;
 #endif
 
-			// Check that temporary file exists.
-			if (!IOConnection.FileExists(m_iocTemp))
-			{
-				throw new FileNotFoundException("Temporary file disappeared before transaction completed.", 
-				                                m_iocTemp.Path);
-			}
-
-			if (IOConnection.FileExists(m_iocBase))
+			if(IOConnection.FileExists(m_iocBase))
 			{
 #if (!KeePassLibSD && !KeePassRT)
-				if (m_iocBase.IsLocalFile())
+				if(m_iocBase.IsLocalFile())
 				{
 					try
 					{
@@ -117,15 +110,13 @@ namespace KeePassLib.Serialization
 						bkSecurity = File.GetAccessControl(m_iocBase.Path);
 
 						File.SetCreationTime(m_iocTemp.Path, tCreation);
-					} catch (Exception)
-					{
-						Debug.Assert(false);
 					}
+					catch(Exception) { Debug.Assert(false); }
 				}
 #endif
 
 				IOConnection.DeleteFile(m_iocBase);
-			} 
+			}
 
 			IOConnection.RenameFile(m_iocTemp, m_iocBase);
 
