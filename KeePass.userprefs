@@ -1,6 +1,6 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Translation/TrlUtil/MainForm.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|Mixed Platforms" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="KeePassLib/PwDefs.cs">
     <Files>
       <File FileName="KeePassLib/Serialization/IOConnection.cs" Line="439" Column="30" />
       <File FileName="KeePassLib/PwDatabase.cs" Line="758" Column="31" />
@@ -9,13 +9,17 @@
       <File FileName="KeePassLib/Serialization/FileTransactionEx.cs" Line="121" Column="1" />
       <File FileName="KeePass/Forms/MainForm_Functions.cs" Line="269" Column="48" />
       <File FileName="KeePass/Program.cs" Line="402" Column="1" />
-      <File FileName="Translation/TrlUtil/MainForm.cs" Line="107" Column="52" />
+      <File FileName="Translation/TrlUtil/MainForm.cs" Line="72" Column="33" />
+      <File FileName="KeePassLib/PwDefs.cs" Line="71" Column="40" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
-          <Node name="KeePass" expanded="True" selected="True" />
-          <Node name="KeePassLib" expanded="True" />
+          <Node name="KeePass" expanded="True" />
+          <Node name="KeePassLib" expanded="True">
+            <Node name="PwDefs.cs" selected="True" />
+          </Node>
+          <Node name="TrlUtil" expanded="True" />
         </State>
       </Pad>
       <Pad Id="ClassPad">
