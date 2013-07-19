@@ -39,7 +39,7 @@ namespace KeePassLib.Serialization
 
 		private bool m_bMadeUnhidden = false;
 
-		private const string StrTempSuffix = ".tmp";
+		public const string StrTempSuffix = ".tmp";
 
 		public FileTransactionEx(IOConnectionInfo iocBaseFile)
 		{
