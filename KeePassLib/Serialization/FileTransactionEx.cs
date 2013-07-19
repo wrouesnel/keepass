@@ -104,7 +104,14 @@ namespace KeePassLib.Serialization
 			bool bEfsEncrypted = false;
 #endif
 
-			if(IOConnection.FileExists(m_iocBase))
+			// Check that temporary file exists.
+			if (!IOConnection.FileExists(m_iocTemp))
+			{
+				throw new FileNotFoundException("Temporary file disappeared before transaction completed.", 
+				                                m_iocTemp.Path);
+			}
+
+			if (IOConnection.FileExists(m_iocBase))
 			{
 #if (!KeePassLibSD && !KeePassRT)
 				if(m_iocBase.IsLocalFile())
