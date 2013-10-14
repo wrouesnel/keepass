@@ -4,6 +4,9 @@ Build/KeePass/*
 Build/KeePassLib/*/*
 Build/KeePassLib/*
 
+Build/KeePass_Distrib/*/*
+Build/KeePass_Distrib/*
+
 Build/KeePassLib_Distrib/*/*
 Build/KeePassLib_Distrib/*
 
@@ -16,3 +19,12 @@ Translation/TrlUtil/KeePass.exe
 Translation/TrlUtil/KeePass.exe.mdb
 Translation/TrlUtil/TrlUtil.exe
 Translation/TrlUtil/TrlUtil.mdb
+
+Private_NoDistrib/*
+
+# Don't include any private keys anywhere
+*.snk
+*.pfx
+
+# Backup files
+*.orig
