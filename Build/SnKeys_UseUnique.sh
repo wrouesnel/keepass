@@ -27,15 +27,15 @@ sn -k Private_NoDistrib/KPScript.snk
 sn -k Private_NoDistrib/SamplePlugin.snk
 
 echo "Symlinking (installing) new keys..."
-ln -s Private_NoDistrib/KeePass.snk KeePass/KeePass.snk
-ln -s Private_NoDistrib/KeePassLib.snk KeePassLib/KeePassLib.snk
-ln -s Private_NoDistrib/KeePassLibSD.snk KeePassLibSD/KeePassLibSD.snk
+ln -s ../Private_NoDistrib/KeePass.snk KeePass/KeePass.snk
+ln -s ../Private_NoDistrib/KeePassLib.snk KeePassLib/KeePassLib.snk
+ln -s ../Private_NoDistrib/KeePassLibSD.snk KeePassLibSD/KeePassLibSD.snk
 
-ln -s Private_NoDistrib/ShInstUtil.snk ShInstUtil/ShInstUtil.snk
+ln -s ../Private_NoDistrib/ShInstUtil.snk ShInstUtil/ShInstUtil.snk
 
-ln -s Private_NoDistrib/ArcFourCipher.snk Plugins/ArcFourCipher/ArcFourCipher.snk
-ln -s Private_NoDistrib/KPScript.snk Plugins/KPScript/KPScript.snk
-ln -s Private_NoDistrib/SamplePlugin.snk Plugins/SamplePlugin/SamplePlugin.snk
+ln -s ../Private_NoDistrib/ArcFourCipher.snk Plugins/ArcFourCipher/ArcFourCipher.snk
+ln -s ../Private_NoDistrib/KPScript.snk Plugins/KPScript/KPScript.snk
+ln -s ../Private_NoDistrib/SamplePlugin.snk Plugins/SamplePlugin/SamplePlugin.snk
 
 # Wind up in the same directory we started
 
