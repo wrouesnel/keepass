@@ -56,7 +56,7 @@ namespace KeePass.Util
 			// if(str != null) return str;
 
 			string str = NativeLib.RunConsoleApp("xsel",
-				"--output --clipboard");
+				"--output --clipboard", false);
 			if(str != null) return str;
 
 			if(Clipboard.ContainsText())
@@ -75,7 +75,7 @@ namespace KeePass.Util
 
 			if(string.IsNullOrEmpty(str))
 			{
-				NativeLib.RunConsoleApp("xsel", "--delete --clipboard");
+				NativeLib.RunConsoleApp("xsel", "--delete --clipboard", false);
 
 				try { Clipboard.Clear(); }
 				catch(Exception) { Debug.Assert(false); }
@@ -84,7 +84,7 @@ namespace KeePass.Util
 			}
 
 			string r = NativeLib.RunConsoleApp("xsel",
-				"--input --clipboard", str);
+				"--input --clipboard", str, false);
 			if(r != null) return;
 
 			try { Clipboard.SetText(str); }

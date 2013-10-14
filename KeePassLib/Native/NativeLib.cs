@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Threading;
 
 using KeePassLib.Utility;
 
@@ -112,8 +113,20 @@ namespace KeePassLib.Native
 			return RunConsoleApp(strAppPath, strParams, null);
 		}
 
+        public static string RunConsoleApp(string strAppPath, string strParams, bool bWaitForExit)
+        {
+            return RunConsoleApp(strAppPath, strParams, null, bWaitForExit);
+        }
+
+        // Compatibility function - waits for console app to exit like normal
+        public static string RunConsoleApp(string strAppPath, string strParams,
+            string strStdInput)
+        {
+            return RunConsoleApp(strAppPath, strParams, strStdInput, true);
+        }
+
 		public static string RunConsoleApp(string strAppPath, string strParams,
-			string strStdInput)
+			string strStdInput, bool bWaitForExit)
 		{
 			if(strAppPath == null) throw new ArgumentNullException("strAppPath");
 			if(strAppPath.Length == 0) throw new ArgumentException("strAppPath");
@@ -141,9 +154,20 @@ namespace KeePassLib.Native
 				}
 
 				string strOutput = p.StandardOutput.ReadToEnd();
-				p.WaitForExit();
-
-				return strOutput;
+				
+                if (!bWaitForExit)
+                {
+                    // Don't block waiting for the app to exit, but prevent
+                    // pipes being detached until the process is ready to exit.
+                    new Thread(delegate() {p.WaitForExit();}).Start();
+                }
+                else
+                {
+                    // Synchronous wait for exit
+                    p.WaitForExit();
+                }
+				
+                return strOutput;
 			}
 			catch(Exception) { Debug.Assert(false); }
 
