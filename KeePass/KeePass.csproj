@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -11,14 +10,13 @@
     <RootNamespace>KeePass</RootNamespace>
     <AssemblyName>KeePass</AssemblyName>
     <ApplicationIcon>KeePass.ico</ApplicationIcon>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>KeePass.pfx</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,6 +33,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\Build\KeePass\Release\</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>
@@ -43,11 +43,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\KeePassLib\Collections\AutoTypeConfig.cs">
@@ -336,6 +336,7 @@
     <Compile Include="DataExchange\Formats\LastPassCsv2.cs" />
     <Compile Include="DataExchange\Formats\MozillaBookmarksHtml100.cs" />
     <Compile Include="DataExchange\Formats\MozillaBookmarksJson100.cs" />
+    <Compile Include="DataExchange\Formats\NetworkPwMgrCsv4.cs" />
     <Compile Include="DataExchange\Formats\OnePwProCsv599.cs" />
     <Compile Include="DataExchange\Formats\PassKeeper12.cs" />
     <Compile Include="DataExchange\Formats\PinsTxt450.cs" />
@@ -1133,6 +1134,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="KeePass.ico" />
+    <None Include="Resources\Data\MostPopularPasswords.txt.gz" />
+    <None Include="Resources\Nuvola_Derived\B16x16_EditCopyUrl.png" />
+    <None Include="Resources\Nuvola\B16x16_KTouch.png" />
+    <None Include="Resources\Nuvola_Derived\B16x16_Folder_2.png" />
+    <None Include="Resources\Images\B16x16_Imp_NetworkPwMgr.png" />
     <None Include="Resources\Images\B16x16_Imp_TurboPws.png" />
     <None Include="Resources\Images\B16x16_Imp_SafeWallet.png" />
     <None Include="Resources\Images\B16x16_Imp_LastPass.png" />
@@ -1259,5 +1265,6 @@
   </Target>
   -->
   <PropertyGroup>
+    <PostBuildEvent>"$(FrameworkSDKDir)bin\sgen.exe" /assembly:"$(TargetPath)" /force /nologo /compiler:/keycontainer:VS_KEY_33430356D8D7D1B8 /compiler:/delaysign-</PostBuildEvent>
   </PropertyGroup>
 </Project>
