@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Threading;
 
 using KeePassLib.Utility;
 
@@ -141,9 +142,14 @@ namespace KeePassLib.Native
 				}
 
 				string strOutput = p.StandardOutput.ReadToEnd();
-				p.WaitForExit();
-
-				return strOutput;
+				
+                // Wait for exit on a new thread to avoid blocking the main
+                // thread, and avoid a dead-lock with single-threaded
+                // window managers blocking on KeePass and not allowing xsel
+                // to finish.
+                new Thread(delegate() {p.WaitForExit();}).Start();
+				
+                return strOutput;
 			}
 			catch(Exception) { Debug.Assert(false); }
 
