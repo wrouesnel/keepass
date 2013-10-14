@@ -84,7 +84,7 @@ namespace KeePass.Util
 			}
 
 			string r = NativeLib.RunConsoleApp("xsel",
-				"--input --clipboard", str);
+				"--input --clipboard --nodetach", str);
 			if(r != null) return;
 
 			try { Clipboard.SetText(str); }
