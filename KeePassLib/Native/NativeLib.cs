@@ -113,6 +113,12 @@ namespace KeePassLib.Native
 			return RunConsoleApp(strAppPath, strParams, null);
 		}
 
+        public static string RunConsoleApp(string strAppPath, string strParams, bool bWaitForExit)
+        {
+            return RunConsoleApp(strAppPath, strParams, null, bWaitForExit);
+        }
+
+        // Compatibility function - waits for console app to exit like normal
         public static string RunConsoleApp(string strAppPath, string strParams,
             string strStdInput)
         {
