@@ -113,8 +113,14 @@ namespace KeePassLib.Native
 			return RunConsoleApp(strAppPath, strParams, null);
 		}
 
+        public static string RunConsoleApp(string strAppPath, string strParams,
+            string strStdInput)
+        {
+            return RunConsoleApp(strAppPath, strParams, strStdInput, true);
+        }
+
 		public static string RunConsoleApp(string strAppPath, string strParams,
-			string strStdInput)
+			string strStdInput, bool bWaitForExit)
 		{
 			if(strAppPath == null) throw new ArgumentNullException("strAppPath");
 			if(strAppPath.Length == 0) throw new ArgumentException("strAppPath");
@@ -143,11 +149,17 @@ namespace KeePassLib.Native
 
 				string strOutput = p.StandardOutput.ReadToEnd();
 				
-                // Wait for exit on a new thread to avoid blocking the main
-                // thread, and avoid a dead-lock with single-threaded
-                // window managers blocking on KeePass and not allowing xsel
-                // to finish.
-                new Thread(delegate() {p.WaitForExit();}).Start();
+                if (!bWaitForExit)
+                {
+                    // Don't block waiting for the app to exit, but prevent
+                    // pipes being detached until the process is ready to exit.
+                    new Thread(delegate() {p.WaitForExit();}).Start();
+                }
+                else
+                {
+                    // Synchronous wait for exit
+                    p.WaitForExit();
+                }
 				
                 return strOutput;
 			}

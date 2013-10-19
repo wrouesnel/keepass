@@ -83,8 +83,10 @@ namespace KeePass.Util
 				return; // xsel with an empty input can hang
 			}
 
+            // Don't block the main thread waiting for xsel to exit, since this can hang
+            // on single-threaded window managers.
 			string r = NativeLib.RunConsoleApp("xsel",
-				"--input --clipboard", str);
+				"--input --clipboard", str, false);
 			if(r != null) return;
 
 			try { Clipboard.SetText(str); }
