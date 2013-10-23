@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Threading;
+using System.Diagnostics;
 
 using KeePassLib.Utility;
 
@@ -113,23 +113,20 @@ namespace KeePassLib.Native
 			return RunConsoleApp(strAppPath, strParams, null);
 		}
 
-        public static string RunConsoleApp(string strAppPath, string strParams, bool bWaitForExit)
-        {
-            return RunConsoleApp(strAppPath, strParams, null, bWaitForExit);
-        }
-
-        // Compatibility function - waits for console app to exit like normal
-        public static string RunConsoleApp(string strAppPath, string strParams,
-            string strStdInput)
-        {
-            return RunConsoleApp(strAppPath, strParams, strStdInput, true);
-        }
+		public static string RunConsoleApp(string strAppPath, string strParams,
+			string strStdInput)
+		{
+			return RunConsoleApp(strAppPath, strParams, strStdInput,
+				(AppRunFlags.GetStdOutput | AppRunFlags.WaitForExit));
+		}
 
 		public static string RunConsoleApp(string strAppPath, string strParams,
-			string strStdInput, bool bWaitForExit)
+			string strStdInput, AppRunFlags f)
 		{
 			if(strAppPath == null) throw new ArgumentNullException("strAppPath");
 			if(strAppPath.Length == 0) throw new ArgumentException("strAppPath");
+
+			bool bStdOut = ((f & AppRunFlags.GetStdOutput) != AppRunFlags.None);
 
 			try
 			{
@@ -139,7 +136,7 @@ namespace KeePassLib.Native
 				psi.FileName = strAppPath;
 				psi.WindowStyle = ProcessWindowStyle.Hidden;
 				psi.UseShellExecute = false;
-				psi.RedirectStandardOutput = true;
+				psi.RedirectStandardOutput = bStdOut;
 
 				if(strStdInput != null) psi.RedirectStandardInput = true;
 
@@ -153,21 +150,22 @@ namespace KeePassLib.Native
 					p.StandardInput.Close();
 				}
 
-				string strOutput = p.StandardOutput.ReadToEnd();
-				
-                if (!bWaitForExit)
-                {
-                    // Don't block waiting for the app to exit, but prevent
-                    // pipes being detached until the process is ready to exit.
-                    new Thread(delegate() {p.WaitForExit();}).Start();
-                }
-                else
-                {
-                    // Synchronous wait for exit
-                    p.WaitForExit();
-                }
-				
-                return strOutput;
+				string strOutput = string.Empty;
+				if(bStdOut) strOutput = p.StandardOutput.ReadToEnd();
+
+				if((f & AppRunFlags.WaitForExit) != AppRunFlags.None)
+					p.WaitForExit();
+				else if((f & AppRunFlags.GCKeepAlive) != AppRunFlags.None)
+				{
+					Thread th = new Thread(delegate()
+					{
+						try { p.WaitForExit(); }
+						catch(Exception) { Debug.Assert(false); }
+					});
+					th.Start();
+				}
+
+				return strOutput;
 			}
 			catch(Exception) { Debug.Assert(false); }
 

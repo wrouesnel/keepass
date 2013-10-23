@@ -246,4 +246,18 @@ namespace KeePassLib
 	//	NOr = 3,
 	//	NAnd = 4
 	// }
+
+	[Flags]
+	public enum AppRunFlags
+	{
+		None = 0,
+		GetStdOutput = 1,
+		WaitForExit = 2,
+
+		// This flag prevents any handles being garbage-collected
+		// before the started process has terminated, without
+		// blocking the current thread;
+		// https://sourceforge.net/p/keepass/patches/84/
+		GCKeepAlive = 4
+	}
 }

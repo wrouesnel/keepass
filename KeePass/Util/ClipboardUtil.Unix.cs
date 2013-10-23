@@ -24,12 +24,17 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Diagnostics;
 
+using KeePassLib;
 using KeePassLib.Native;
 
 namespace KeePass.Util
 {
 	public static partial class ClipboardUtil
 	{
+		// https://sourceforge.net/p/keepass/patches/84/
+		private const AppRunFlags XSelFlags = (AppRunFlags.GetStdOutput |
+			AppRunFlags.GCKeepAlive);
+
 		private static string GetStringM()
 		{
 			// string strGtk = GtkGetString();
@@ -56,7 +61,7 @@ namespace KeePass.Util
 			// if(str != null) return str;
 
 			string str = NativeLib.RunConsoleApp("xsel",
-				"--output --clipboard", false);
+				"--output --clipboard", null, XSelFlags);
 			if(str != null) return str;
 
 			if(Clipboard.ContainsText())
@@ -75,7 +80,8 @@ namespace KeePass.Util
 
 			if(string.IsNullOrEmpty(str))
 			{
-				NativeLib.RunConsoleApp("xsel", "--delete --clipboard", false);
+				NativeLib.RunConsoleApp("xsel", "--delete --clipboard",
+					null, XSelFlags);
 
 				try { Clipboard.Clear(); }
 				catch(Exception) { Debug.Assert(false); }
@@ -83,10 +89,8 @@ namespace KeePass.Util
 				return; // xsel with an empty input can hang
 			}
 
-            // Don't block the main thread waiting for xsel to exit, since this can hang
-            // on single-threaded window managers.
 			string r = NativeLib.RunConsoleApp("xsel",
-				"--input --clipboard", str, false);
+				"--input --clipboard", str, XSelFlags);
 			if(r != null) return;
 
 			try { Clipboard.SetText(str); }
