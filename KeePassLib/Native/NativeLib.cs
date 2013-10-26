@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using System.Threading;
 using System.Diagnostics;
 
@@ -119,57 +120,101 @@ namespace KeePassLib.Native
 			return RunConsoleApp(strAppPath, strParams, strStdInput,
 				(AppRunFlags.GetStdOutput | AppRunFlags.WaitForExit));
 		}
+		
+        delegate string RunProcessDelegate();
 
-		public static string RunConsoleApp(string strAppPath, string strParams,
+        public static string RunConsoleApp(string strAppPath, string strParams,
 			string strStdInput, AppRunFlags f)
 		{
 			if(strAppPath == null) throw new ArgumentNullException("strAppPath");
 			if(strAppPath.Length == 0) throw new ArgumentException("strAppPath");
 
 			bool bStdOut = ((f & AppRunFlags.GetStdOutput) != AppRunFlags.None);
+            bool bDoEvents = ((f & AppRunFlags.DoEventsWorkAround) != AppRunFlags.None);
 
-			try
-			{
-				ProcessStartInfo psi = new ProcessStartInfo();
+            RunProcessDelegate dlgt = delegate ()
+            {
+    			try
+    			{
+    				ProcessStartInfo psi = new ProcessStartInfo();
 
-				psi.CreateNoWindow = true;
-				psi.FileName = strAppPath;
-				psi.WindowStyle = ProcessWindowStyle.Hidden;
-				psi.UseShellExecute = false;
-				psi.RedirectStandardOutput = bStdOut;
+    				psi.CreateNoWindow = true;
+    				psi.FileName = strAppPath;
+    				psi.WindowStyle = ProcessWindowStyle.Hidden;
+    				psi.UseShellExecute = false;
+    				psi.RedirectStandardOutput = bStdOut;
 
-				if(strStdInput != null) psi.RedirectStandardInput = true;
+    				if(strStdInput != null) psi.RedirectStandardInput = true;
 
-				if(!string.IsNullOrEmpty(strParams)) psi.Arguments = strParams;
+    				if(!string.IsNullOrEmpty(strParams)) psi.Arguments = strParams;
 
-				Process p = Process.Start(psi);
+    				Process p = Process.Start(psi);
 
-				if(strStdInput != null)
-				{
-					p.StandardInput.Write(strStdInput);
-					p.StandardInput.Close();
-				}
+    				if(strStdInput != null)
+    				{
+    					p.StandardInput.Write(strStdInput);
+    					p.StandardInput.Close();
+    				}
 
-				string strOutput = string.Empty;
-				if(bStdOut) strOutput = p.StandardOutput.ReadToEnd();
+    				string strOutput = string.Empty;
+    				if(bStdOut) strOutput = p.StandardOutput.ReadToEnd();
 
-				if((f & AppRunFlags.WaitForExit) != AppRunFlags.None)
-					p.WaitForExit();
-				else if((f & AppRunFlags.GCKeepAlive) != AppRunFlags.None)
-				{
-					Thread th = new Thread(delegate()
-					{
-						try { p.WaitForExit(); }
-						catch(Exception) { Debug.Assert(false); }
-					});
-					th.Start();
-				}
+    				if((f & AppRunFlags.WaitForExit) != AppRunFlags.None)
+    					p.WaitForExit();
+    				else if((f & AppRunFlags.GCKeepAlive) != AppRunFlags.None)
+    				{
+    					Thread th = new Thread(delegate()
+    					{
+    						try { p.WaitForExit(); }
+    						catch(Exception) { Debug.Assert(false); }
+    					});
+    					th.Start();
+    				}
 
-				return strOutput;
-			}
-			catch(Exception) { Debug.Assert(false); }
+    				return strOutput;
+    			}
+    			catch(Exception) { Debug.Assert(false); }
+                return null;
+            };
 
-			return null;
+            if (bDoEvents)
+            {
+                // Disable user input
+                List<Form> DisabledFormsList = new List<Form>();
+                foreach(Form form in Application.OpenForms)
+                {
+                    if (form.Enabled)
+                    {
+                        DisabledFormsList.Add(form);
+                        form.Enabled = false;
+                    }
+                }
+
+                // Make async function call
+                IAsyncResult ar = dlgt.BeginInvoke(null, null);
+
+                // Run message pump to avoid xsel locking up the window
+                // manager, Mono, Keepass or some combination thereof
+                while (!ar.AsyncWaitHandle.WaitOne(0))
+                {
+                    Application.DoEvents();
+                    Thread.Sleep(0);    // Let other threads execute
+                }
+
+                string ReturnString = dlgt.EndInvoke(ar);
+
+                foreach(Form form in DisabledFormsList)
+                {
+                    form.Enabled = true;
+                }
+                // Return result like normal from async call
+                return ReturnString;
+            }
+            else
+            {
+                // Run the function synchronously, return result like normal
+                return dlgt();
+            }
 		}
 #endif
 

@@ -258,6 +258,11 @@ namespace KeePassLib
 		// before the started process has terminated, without
 		// blocking the current thread;
 		// https://sourceforge.net/p/keepass/patches/84/
-		GCKeepAlive = 4
+		GCKeepAlive = 4,
+
+        // Indicates that KeePass should loop on Application.DoEvents
+        // and run an application in a separate worker. This avoids
+        // Mono deadlocks.
+        DoEventsWorkAround = 8
 	}
 }

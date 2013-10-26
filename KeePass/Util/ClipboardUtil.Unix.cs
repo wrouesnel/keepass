@@ -33,7 +33,7 @@ namespace KeePass.Util
 	{
 		// https://sourceforge.net/p/keepass/patches/84/
 		private const AppRunFlags XSelFlags = (AppRunFlags.GetStdOutput |
-			AppRunFlags.GCKeepAlive);
+			AppRunFlags.DoEventsWorkAround);
 
 		private static string GetStringM()
 		{
