@@ -260,9 +260,8 @@ namespace KeePassLib
 		// https://sourceforge.net/p/keepass/patches/84/
 		GCKeepAlive = 4,
 
-        // Indicates that KeePass should loop on Application.DoEvents
-        // and run an application in a separate worker. This avoids
-        // Mono deadlocks.
-        DoEventsWorkAround = 8
+		// https://sourceforge.net/p/keepass/patches/85/
+		DoEvents = 8,
+		DisableForms = 16
 	}
 }

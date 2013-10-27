@@ -32,8 +32,10 @@ namespace KeePass.Util
 	public static partial class ClipboardUtil
 	{
 		// https://sourceforge.net/p/keepass/patches/84/
+		// https://sourceforge.net/p/keepass/patches/85/
 		private const AppRunFlags XSelFlags = (AppRunFlags.GetStdOutput |
-			AppRunFlags.DoEventsWorkAround);
+			AppRunFlags.GCKeepAlive | AppRunFlags.DoEvents |
+			AppRunFlags.DisableForms);
 
 		private static string GetStringM()
 		{
