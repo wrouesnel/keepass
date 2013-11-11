@@ -4,6 +4,11 @@
 
 cd ..
 
+# Make directory if it doesn't exist
+if [ ! -d Private_NoDistrib ]; then
+	mkdir Private_NoDistrib
+fi
+
 echo "Deleting any old keys..."
 rm KeePass/KeePass.snk
 rm KeePassLib/KeePassLib.snk
