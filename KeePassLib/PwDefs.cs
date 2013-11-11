@@ -66,7 +66,7 @@ namespace KeePassLib
 		/// <summary>
 		/// Version, encoded as string.
 		/// </summary>
-		public const string VersionString = "2.24";
+		public const string VersionString = "2.24~wrouesnel";
 
 		public const string Copyright = @"Copyright © 2003-2013 Dominik Reichl";
 
