@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -32,6 +33,7 @@ namespace KeePass.UI
 	public sealed class ImageComboBoxEx : ComboBox
 	{
 		private List<Image> m_vImages = null;
+		[Browsable(false)]
 		public List<Image> OrderedImageList
 		{
 			get { return m_vImages; }
@@ -40,7 +42,7 @@ namespace KeePass.UI
 
 		public ImageComboBoxEx() : base()
 		{
-			if(this.DesignMode) return;
+			if(Program.DesignMode) return;
 			if(NativeLib.IsUnix()) return;
 
 			Debug.Assert(this.DrawMode == DrawMode.Normal);

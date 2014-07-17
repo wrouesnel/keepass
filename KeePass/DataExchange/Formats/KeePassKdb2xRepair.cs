@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ namespace KeePass.DataExchange.Formats
 			int iNo = (int)DialogResult.No;
 			int r = VistaTaskDialog.ShowMessageBoxEx(strMsg, strTitle,
 				PwDefs.ShortProductName, VtdIcon.Warning, null,
-				KPRes.Yes, iYes, KPRes.No, iNo);
+				KPRes.YesCmd, iYes, KPRes.NoCmd, iNo);
 			if(r < 0)
 				r = (MessageService.AskYesNo(strTitle + MessageService.NewParagraph +
 					strMsg, PwDefs.ShortProductName, false, MessageBoxIcon.Warning) ?

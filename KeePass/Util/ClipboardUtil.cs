@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ using System.Threading;
 
 using KeePass.App;
 using KeePass.Ecas;
+using KeePass.Forms;
 using KeePass.Native;
 using KeePass.UI;
 using KeePass.Util;
@@ -119,7 +120,12 @@ namespace KeePass.Util
 			if(peEntryInfo != null) peEntryInfo.Touch(false);
 
 			// SprEngine.Compile might have modified the database
-			Program.MainForm.UpdateUI(false, null, false, null, false, null, false);
+			MainForm mf = Program.MainForm;
+			if((mf != null) && bSprCompile)
+			{
+				mf.RefreshEntriesList();
+				mf.UpdateUI(false, null, false, null, false, null, false);
+			}
 
 			return true;
 		}

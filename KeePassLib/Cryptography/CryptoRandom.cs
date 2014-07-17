@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -158,6 +158,7 @@ namespace KeePassLib.Cryptography
 			ms.Write(pb, 0, pb.Length);
 
 #if (!KeePassLibSD && !KeePassRT)
+			Process p = null;
 			try
 			{
 				pb = MemUtil.UInt32ToBytes((uint)Environment.ProcessorCount);
@@ -166,13 +167,11 @@ namespace KeePassLib.Cryptography
 				ms.Write(pb, 0, pb.Length);
 
 				Version v = Environment.OSVersion.Version;
-				int nv = (v.Major << 28) + (v.MajorRevision << 24) +
-					(v.Minor << 20) + (v.MinorRevision << 16) +
-					(v.Revision << 12) + v.Build;
-				pb = MemUtil.UInt32ToBytes((uint)nv);
+				pb = MemUtil.UInt32ToBytes((uint)v.GetHashCode());
 				ms.Write(pb, 0, pb.Length);
 
-				Process p = Process.GetCurrentProcess();
+				p = Process.GetCurrentProcess();
+
 				pb = MemUtil.UInt64ToBytes((ulong)p.Handle.ToInt64());
 				ms.Write(pb, 0, pb.Length);
 				pb = MemUtil.UInt32ToBytes((uint)p.HandleCount);
@@ -205,6 +204,11 @@ namespace KeePassLib.Cryptography
 				// ms.Write(pb, 0, pb.Length);
 			}
 			catch(Exception) { }
+			finally
+			{
+				try { if(p != null) p.Dispose(); }
+				catch(Exception) { Debug.Assert(false); }
+			}
 #endif
 
 			pb = Guid.NewGuid().ToByteArray();

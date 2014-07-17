@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
+using System.Reflection;
 using System.Diagnostics;
 
 using KeePassLib.Utility;
@@ -44,6 +48,43 @@ namespace KeePassLib.Native
 		{
 			get { return m_bAllowNative; }
 			set { m_bAllowNative = value; }
+		}
+
+		private static ulong? m_ouMonoVersion = null;
+		public static ulong MonoVersion
+		{
+			get
+			{
+				if(m_ouMonoVersion.HasValue) return m_ouMonoVersion.Value;
+
+				ulong uVersion = 0;
+				try
+				{
+					Type t = Type.GetType("Mono.Runtime");
+					if(t != null)
+					{
+						MethodInfo mi = t.GetMethod("GetDisplayName",
+							BindingFlags.NonPublic | BindingFlags.Static);
+						if(mi != null)
+						{
+							string strName = (mi.Invoke(null, null) as string);
+							if(!string.IsNullOrEmpty(strName))
+							{
+								Match m = Regex.Match(strName, "\\d+(\\.\\d+)+");
+								if(m.Success)
+									uVersion = StrUtil.ParseVersion(m.Value);
+								else { Debug.Assert(false); }
+							}
+							else { Debug.Assert(false); }
+						}
+						else { Debug.Assert(false); }
+					}
+				}
+				catch(Exception) { Debug.Assert(false); }
+
+				m_ouMonoVersion = uVersion;
+				return uVersion;
+			}
 		}
 
 		/// <summary>
@@ -151,6 +192,10 @@ namespace KeePassLib.Native
 
 					if(strStdInput != null)
 					{
+						// Workaround for Mono Process StdIn BOM bug;
+						// https://sourceforge.net/p/keepass/bugs/1219/
+						EnsureNoBom(p.StandardInput);
+
 						p.StandardInput.Write(strStdInput);
 						p.StandardInput.Close();
 					}
@@ -208,6 +253,25 @@ namespace KeePassLib.Native
 			}
 
 			return fnRun();
+		}
+
+		private static void EnsureNoBom(StreamWriter sw)
+		{
+			if(sw == null) { Debug.Assert(false); return; }
+			if(!NativeLib.IsUnix()) return;
+
+			try
+			{
+				Encoding enc = sw.Encoding;
+				if(enc == null) { Debug.Assert(false); return; }
+				byte[] pbBom = enc.GetPreamble();
+				if((pbBom == null) || (pbBom.Length == 0)) return;
+
+				FieldInfo fi = typeof(StreamWriter).GetField("preamble_done",
+					BindingFlags.Instance | BindingFlags.NonPublic);
+				if(fi != null) fi.SetValue(sw, true);
+			}
+			catch(Exception) { Debug.Assert(false); }
 		}
 #endif
 

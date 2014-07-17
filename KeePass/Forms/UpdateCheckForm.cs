@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ namespace KeePass.Forms
 
 			string strCat = string.Empty;
 			ListViewGroup lvg = null;
+			const uint uMinComp = 2;
 
 			foreach(UpdateComponentInfo uc in m_lInfo)
 			{
@@ -123,12 +124,12 @@ namespace KeePass.Forms
 				else lvi.ImageIndex = 0;
 
 				lvi.SubItems.Add(strStatus);
-				lvi.SubItems.Add(StrUtil.VersionToString(uc.VerInstalled, true));
+				lvi.SubItems.Add(StrUtil.VersionToString(uc.VerInstalled, uMinComp));
 
 				if((uc.Status == UpdateComponentStatus.UpToDate) ||
 					(uc.Status == UpdateComponentStatus.NewVerAvailable) ||
 					(uc.Status == UpdateComponentStatus.PreRelease))
-					lvi.SubItems.Add(StrUtil.VersionToString(uc.VerAvailable, true));
+					lvi.SubItems.Add(StrUtil.VersionToString(uc.VerAvailable, uMinComp));
 				else lvi.SubItems.Add("?");
 
 				if(lvg != null) lvi.Group = lvg;

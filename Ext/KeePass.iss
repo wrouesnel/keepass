@@ -8,17 +8,17 @@
 #define MyAppNameEx "KeePass Password Safe 2"
 #define MyAppPublisher "Dominik Reichl"
 
-#define KeeVersionStr "2.24"
-#define KeeVersionStrWithMinor "2.24"
-#define KeeVersionStrWithMinorPath "2.24"
-#define KeeVersionWin "2.24.0.0"
-#define KeeVersionWinShort "2.24"
+#define KeeVersionStr "2.27"
+#define KeeVersionStrWithMinor "2.27"
+#define KeeVersionStrWithMinorPath "2.27"
+#define KeeVersionWin "2.27.0.0"
+#define KeeVersionWinShort "2.27"
 
 #define MyAppURL "http://keepass.info/"
 #define MyAppExeName "KeePass.exe"
 #define MyAppUrlName "KeePass.url"
 #define MyAppHelpName "KeePass.chm"
-#define KeeDevPeriod "2003-2013"
+#define KeeDevPeriod "2003-2014"
 #define MyAppId "KeePassPasswordSafe2"
 
 [Setup]
@@ -35,7 +35,7 @@ MinVersion=5.0
 DefaultDirName={pf}\{#MyAppNameEx}
 DefaultGroupName={#MyAppNameEx}
 AllowNoIcons=yes
-LicenseFile=..\Docs\License_Install.txt
+LicenseFile=..\Docs\License.txt
 OutputDir=..\Build\KeePass_Distrib
 OutputBaseFilename={#MyAppNameShort}-{#KeeVersionStrWithMinorPath}-Setup
 Compression=lzma2/ultra

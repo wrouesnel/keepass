@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -51,6 +52,7 @@ namespace KeePass.Util
 		private static bool m_bIsAtLeastWindows2000 = false;
 		private static bool m_bIsAtLeastWindowsVista = false;
 		private static bool m_bIsAtLeastWindows7 = false;
+		private static bool m_bIsAtLeastWindows8 = false;
 
 		private static string m_strExePath = null;
 
@@ -86,6 +88,11 @@ namespace KeePass.Util
 			get { return m_bIsAtLeastWindows7; }
 		}
 
+		public static bool IsAtLeastWindows8
+		{
+			get { return m_bIsAtLeastWindows8; }
+		}
+
 		static WinUtil()
 		{
 			OperatingSystem os = Environment.OSVersion;
@@ -98,6 +105,7 @@ namespace KeePass.Util
 			m_bIsAtLeastWindows2000 = (v.Major >= 5);
 			m_bIsAtLeastWindowsVista = (v.Major >= 6);
 			m_bIsAtLeastWindows7 = ((v.Major >= 7) || ((v.Major == 6) && (v.Minor >= 1)));
+			m_bIsAtLeastWindows8 = ((v.Major >= 7) || ((v.Major == 6) && (v.Minor >= 2)));
 		}
 
 		public static void OpenEntryUrl(PwEntry pe)
@@ -105,25 +113,33 @@ namespace KeePass.Util
 			Debug.Assert(pe != null);
 			if(pe == null) throw new ArgumentNullException("pe");
 
+			string strUrl = pe.Strings.ReadSafe(PwDefs.UrlField);
+
 			if(pe.OverrideUrl.Length > 0)
-				WinUtil.OpenUrl(pe.OverrideUrl, pe);
+				WinUtil.OpenUrl(pe.OverrideUrl, pe, true, strUrl);
 			else
 			{
 				string strOverride = Program.Config.Integration.UrlOverride;
 				if(strOverride.Length > 0)
-					WinUtil.OpenUrl(strOverride, pe);
+					WinUtil.OpenUrl(strOverride, pe, true, strUrl);
 				else
-					WinUtil.OpenUrl(pe.Strings.ReadSafe(PwDefs.UrlField), pe);
+					WinUtil.OpenUrl(strUrl, pe, true);
 			}
 		}
 
 		public static void OpenUrl(string strUrlToOpen, PwEntry peDataSource)
 		{
-			OpenUrl(strUrlToOpen, peDataSource, true);
+			OpenUrl(strUrlToOpen, peDataSource, true, null);
 		}
 
 		public static void OpenUrl(string strUrlToOpen, PwEntry peDataSource,
 			bool bAllowOverride)
+		{
+			OpenUrl(strUrlToOpen, peDataSource, bAllowOverride, null);
+		}
+
+		public static void OpenUrl(string strUrlToOpen, PwEntry peDataSource,
+			bool bAllowOverride, string strBaseRaw)
 		{
 			// If URL is null, return, do not throw exception.
 			Debug.Assert(strUrlToOpen != null); if(strUrlToOpen == null) return;
@@ -147,17 +163,26 @@ namespace KeePass.Util
 
 			bool bCmdQuotes = WinUtil.IsCommandLineUrl(strUrlFlt);
 
-			string strUrl = SprEngine.Compile(strUrlFlt, new SprContext(
-				peDataSource, pwDatabase, SprCompileFlags.All, false, bCmdQuotes));
+			SprContext ctx = new SprContext(peDataSource, pwDatabase,
+				SprCompileFlags.All, false, bCmdQuotes);
+			ctx.Base = strBaseRaw;
+			ctx.BaseIsEncoded = false;
+
+			string strUrl = SprEngine.Compile(strUrlFlt, ctx);
 
 			string strOvr = Program.Config.Integration.UrlSchemeOverrides.GetOverrideForUrl(
 				strUrl);
 			if(!bAllowOverride) strOvr = null;
 			if(strOvr != null)
 			{
-				bCmdQuotes = WinUtil.IsCommandLineUrl(strOvr);
-				strUrl = SprEngine.Compile(strOvr, new SprContext(
-					peDataSource, pwDatabase, SprCompileFlags.All, false, bCmdQuotes));
+				bool bCmdQuotesOvr = WinUtil.IsCommandLineUrl(strOvr);
+
+				SprContext ctxOvr = new SprContext(peDataSource, pwDatabase,
+					SprCompileFlags.All, false, bCmdQuotesOvr);
+				ctxOvr.Base = strUrl;
+				ctxOvr.BaseIsEncoded = bCmdQuotes;
+
+				strUrl = SprEngine.Compile(strOvr, ctxOvr);
 			}
 
 			if(WinUtil.IsCommandLineUrl(strUrl))

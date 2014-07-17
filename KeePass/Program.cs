@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -74,6 +74,11 @@ namespace KeePass
 		private static EcasTriggerSystem m_ecasTriggers = null;
 		private static CustomPwGeneratorPool m_pwGenPool = null;
 		private static ColumnProviderPool m_colProvPool = null;
+
+		private static bool m_bDesignMode = true;
+#if DEBUG
+		private static bool m_bDesignModeQueried = false;
+#endif
 
 		public enum AppMessage
 		{
@@ -197,12 +202,31 @@ namespace KeePass
 			}
 		}
 
+		public static bool DesignMode
+		{
+			get
+			{
+#if DEBUG
+				m_bDesignModeQueried = true;
+#endif
+				return m_bDesignMode;
+			}
+		}
+
 		/// <summary>
 		/// Main entry point for the application.
 		/// </summary>
 		[STAThread]
 		public static void Main(string[] args)
 		{
+#if DEBUG
+			// Program.DesignMode should not be queried before executing
+			// Main (e.g. by a static Control) when running the program
+			// normally
+			Debug.Assert(!m_bDesignModeQueried);
+#endif
+			m_bDesignMode = false; // Designer doesn't call Main method
+
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.DoEvents(); // Required
@@ -328,6 +352,13 @@ namespace KeePass
 				MainCleanUp();
 				return;
 			}
+			else if(m_cmdLineArgs[AppDefs.CommandLineOptions.Version] != null)
+			{
+				Console.WriteLine(PwDefs.ShortProductName + " " + PwDefs.VersionString);
+				Console.WriteLine(PwDefs.Copyright);
+				MainCleanUp();
+				return;
+			}
 			// #if (DEBUG && !KeePassLibSD)
 			// else if(m_cmdLineArgs[AppDefs.CommandLineOptions.MakePopularPasswordTable] != null)
 			// {
@@ -378,6 +409,21 @@ namespace KeePass
 				BroadcastAppMessageAndCleanUp(AppMessage.Unlock);
 				return;
 			}
+			else if(m_cmdLineArgs[AppDefs.CommandLineOptions.IpcEvent] != null)
+			{
+				string strName = m_cmdLineArgs[AppDefs.CommandLineOptions.IpcEvent];
+				if(!string.IsNullOrEmpty(strName))
+				{
+					string[] vFlt = KeyUtil.MakeCtxIndependent(args);
+
+					IpcParamEx ipEvent = new IpcParamEx(IpcUtilEx.CmdIpcEvent, strName,
+						CommandLineArgs.SafeSerialize(vFlt), null, null, null);
+					IpcUtilEx.SendGlobalMessage(ipEvent);
+				}
+
+				MainCleanUp();
+				return;
+			}
 
 			// Mutex mSingleLock = TrySingleInstanceLock(AppDefs.MutexName, true);
 			bool bSingleLock = GlobalMutexPool.CreateMutex(AppDefs.MutexName, true);
@@ -411,7 +457,13 @@ namespace KeePass
 				m_formMain = new MainForm();
 				Application.Run(m_formMain);
 			}
-			catch(Exception exPrg) { MessageService.ShowFatal(exPrg); }
+			catch(Exception exPrg)
+			{
+				// Catch message box exception;
+				// https://sourceforge.net/p/keepass/patches/86/
+				try { MessageService.ShowFatal(exPrg); }
+				catch(Exception) { Console.Error.WriteLine(exPrg.ToString()); }
+			}
 #endif
 
 			Application.RemoveMessageFilter(nfActivity);
@@ -437,6 +489,8 @@ namespace KeePass
 		/// </summary>
 		public static bool CommonInit()
 		{
+			m_bDesignMode = false; // Again, for the ones not calling Main
+
 			int nRandomSeed = (int)DateTime.UtcNow.Ticks;
 			// Prevent overflow (see Random class constructor)
 			if(nRandomSeed == int.MinValue) nRandomSeed = 17;
@@ -479,6 +533,10 @@ namespace KeePass
 
 		public static void CommonTerminate()
 		{
+#if DEBUG
+			Debug.Assert(ShutdownBlocker.Instance == null);
+#endif
+
 			AppLogEx.Close();
 
 			EnableThemingInScope.StaticDispose();
@@ -623,38 +681,40 @@ namespace KeePass
 		private static void LoadTranslation()
 		{
 			string strLangFile = m_appConfig.Application.LanguageFile;
-			if(!string.IsNullOrEmpty(strLangFile))
+			if(string.IsNullOrEmpty(strLangFile)) return;
+
+			string[] vLangDirs = new string[]{
+				AppConfigSerializer.AppDataDirectory,
+				AppConfigSerializer.LocalAppDataDirectory,
+				UrlUtil.GetFileDirectory(WinUtil.GetExecutable(), false, false)
+			};
+
+			foreach(string strLangDir in vLangDirs)
 			{
-				string[] vLangDirs = new string[]{
-					AppConfigSerializer.AppDataDirectory,
-					AppConfigSerializer.LocalAppDataDirectory,
-					UrlUtil.GetFileDirectory(WinUtil.GetExecutable(), false, false)
-				};
+				string strLangPath = UrlUtil.EnsureTerminatingSeparator(
+					strLangDir, false) + strLangFile;
 
-				foreach(string strLangDir in vLangDirs)
+				try
 				{
-					string strLangPath = UrlUtil.EnsureTerminatingSeparator(
-						strLangDir, false) + strLangFile;
+					// Performance optimization
+					if(!File.Exists(strLangPath)) continue;
 
-					try
-					{
-						XmlSerializerEx xs = new XmlSerializerEx(typeof(KPTranslation));
-						m_kpTranslation = KPTranslation.LoadFromFile(strLangPath, xs);
+					XmlSerializerEx xs = new XmlSerializerEx(typeof(KPTranslation));
+					m_kpTranslation = KPTranslation.LoadFromFile(strLangPath, xs);
 
-						KPRes.SetTranslatedStrings(
-							m_kpTranslation.SafeGetStringTableDictionary(
-							"KeePass.Resources.KPRes"));
-						KLRes.SetTranslatedStrings(
-							m_kpTranslation.SafeGetStringTableDictionary(
-							"KeePassLib.Resources.KLRes"));
+					KPRes.SetTranslatedStrings(
+						m_kpTranslation.SafeGetStringTableDictionary(
+						"KeePass.Resources.KPRes"));
+					KLRes.SetTranslatedStrings(
+						m_kpTranslation.SafeGetStringTableDictionary(
+						"KeePassLib.Resources.KLRes"));
 
-						StrUtil.RightToLeft = m_kpTranslation.Properties.RightToLeft;
-						break;
-					}
-					catch(DirectoryNotFoundException) { } // Ignore
-					catch(FileNotFoundException) { } // Ignore
-					catch(Exception) { Debug.Assert(false); }
+					StrUtil.RightToLeft = m_kpTranslation.Properties.RightToLeft;
+					break;
 				}
+				// catch(DirectoryNotFoundException) { } // Ignore
+				// catch(FileNotFoundException) { } // Ignore
+				catch(Exception) { Debug.Assert(false); }
 			}
 		}
 
