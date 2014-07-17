@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -27,6 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\Build\KeePassLib\Debug\KeePassLib.xml</DocumentationFile>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -36,6 +36,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\Build\KeePassLib\Release\KeePassLib.xml</DocumentationFile>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -78,6 +79,7 @@
     <Compile Include="Keys\KeyValidatorPool.cs" />
     <Compile Include="Keys\UserKeyType.cs" />
     <Compile Include="Native\NativeMethods.cs" />
+    <Compile Include="Native\NativeMethods.Unix.cs" />
     <Compile Include="PwCustomIcon.cs" />
     <Compile Include="Resources\KLRes.Generated.cs" />
     <Compile Include="Resources\KSRes.Generated.cs" />
@@ -126,6 +128,7 @@
     <Compile Include="Utility\MessageService.cs" />
     <Compile Include="Native\NativeLib.cs" />
     <Compile Include="Cryptography\PasswordGenerator\PwGenerator.cs" />
+    <Compile Include="Utility\MonoWorkarounds.cs" />
     <Compile Include="Utility\StrUtil.cs" />
     <Compile Include="Utility\UrlUtil.cs" />
     <Compile Include="Utility\TimeUtil.cs" />

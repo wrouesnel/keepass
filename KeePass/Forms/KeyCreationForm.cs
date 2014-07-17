@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ namespace KeePass.Forms
 
 			m_icgPassword.Attach(m_tbPassword, m_cbHidePassword, m_lblRepeatPassword,
 				m_tbRepeatPassword, m_lblEstimatedQuality, m_pbPasswordQuality,
-				m_lblQualityBits, this, true, false);
+				m_lblQualityInfo, m_ttRect, this, true, false);
 
 			m_cmbKeyFile.Items.Add(KPRes.NoKeyFileSpecifiedMeta);
 			foreach(KeyProvider prov in Program.KeyProviderPool)

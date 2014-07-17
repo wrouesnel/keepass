@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ using KeePass.Util;
 using KeePassLib;
 using KeePassLib.Cryptography;
 using KeePassLib.Utility;
+
+// using KpLibNativeMethods = KeePassLib.Native.NativeMethods;
 
 namespace KeePass.UI
 {
@@ -206,6 +208,7 @@ namespace KeePass.UI
 		private void SecureDialogThread(object oParam)
 		{
 			BackgroundForm formBack = null;
+			// bool bLangBar = false;
 
 			SecureThreadInfo stp = (oParam as SecureThreadInfo);
 			if(stp == null) { Debug.Assert(false); return; }
@@ -250,6 +253,8 @@ namespace KeePass.UI
 				if(Program.Config.UI.SecureDesktopPlaySound)
 					UIUtil.PlayUacSound();
 
+				// bLangBar = ShowLangBar(true);
+
 				lock(stp) { stp.State = SecureThreadState.ShowingDialog; }
 				stp.DialogResult = f.ShowDialog(formBack);
 				stp.ResultObject = m_fnResultBuilder(f);
@@ -259,6 +264,8 @@ namespace KeePass.UI
 			catch(Exception) { Debug.Assert(false); }
 			finally
 			{
+				// if(bLangBar) ShowLangBar(false);
+
 				if(formBack != null)
 				{
 					try
@@ -272,6 +279,19 @@ namespace KeePass.UI
 				lock(stp) { stp.State = SecureThreadState.Terminated; }
 			}
 		}
+
+		/* private static bool ShowLangBar(bool bShow)
+		{
+			try
+			{
+				return KpLibNativeMethods.TfShowLangBar(bShow ?
+					KpLibNativeMethods.TF_SFT_SHOWNORMAL :
+					KpLibNativeMethods.TF_SFT_HIDDEN);
+			}
+			catch(Exception) { }
+
+			return false;
+		} */
 
 		private static void HandleUnexpectedDesktopSwitch(IntPtr pOrgDesktop,
 			IntPtr pNewDesktop, SecureThreadInfo stp)

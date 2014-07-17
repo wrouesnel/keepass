@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -333,7 +333,7 @@ namespace KeePass.Forms
 
 			foreach(ListViewItem lvi in lvsicSel)
 			{
-				PwUuid uuidIcon = lvi.Tag as PwUuid;
+				PwUuid uuidIcon = (lvi.Tag as PwUuid);
 
 				Debug.Assert(uuidIcon != null);
 				if(uuidIcon != null) vUuidsToDelete.Add(uuidIcon);

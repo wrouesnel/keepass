@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ using KeePassLib.Security;
 
 namespace KeePassLib.Cryptography
 {
-/* #pragma warning disable 1591
-	/// <summary>
+	/* /// <summary>
 	/// Return values of the <c>SelfTest.Perform</c> method.
 	/// </summary>
 	public enum SelfTestResult
@@ -44,8 +43,7 @@ namespace KeePassLib.Cryptography
 		RijndaelEcbError = 1,
 		Salsa20Error = 2,
 		NativeKeyTransformationError = 3
-	}
-#pragma warning restore 1591 */
+	} */
 
 	/// <summary>
 	/// Class containing self-test methods.
@@ -252,6 +250,34 @@ namespace KeePassLib.Cryptography
 			pbN = enc.GetBytes("012b");
 			if(MemUtil.IndexOf<byte>(pb, pbN) >= 0)
 				throw new InvalidOperationException("MemUtil-7");
+
+			byte[] pbRes = MemUtil.ParseBase32("MY======");
+			byte[] pbExp = Encoding.ASCII.GetBytes("f");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-1");
+
+			pbRes = MemUtil.ParseBase32("MZXQ====");
+			pbExp = Encoding.ASCII.GetBytes("fo");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-2");
+
+			pbRes = MemUtil.ParseBase32("MZXW6===");
+			pbExp = Encoding.ASCII.GetBytes("foo");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-3");
+
+			pbRes = MemUtil.ParseBase32("MZXW6YQ=");
+			pbExp = Encoding.ASCII.GetBytes("foob");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-4");
+
+			pbRes = MemUtil.ParseBase32("MZXW6YTB");
+			pbExp = Encoding.ASCII.GetBytes("fooba");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-5");
+
+			pbRes = MemUtil.ParseBase32("MZXW6YTBOI======");
+			pbExp = Encoding.ASCII.GetBytes("foobar");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-6");
+
+			pbRes = MemUtil.ParseBase32("JNSXSIDQOJXXM2LEMVZCAYTBONSWIIDPNYQG63TFFV2GS3LFEBYGC43TO5XXEZDTFY======");
+			pbExp = Encoding.ASCII.GetBytes("Key provider based on one-time passwords.");
+			if(!MemUtil.ArraysEqual(pbRes, pbExp)) throw new Exception("Base32-7");
 #endif
 		}
 
@@ -365,10 +391,16 @@ namespace KeePassLib.Cryptography
 				throw new InvalidOperationException("StrUtil-V3");
 			if(StrUtil.VersionToString(0x00FF000000000000UL) != "255")
 				throw new InvalidOperationException("StrUtil-V4");
-			if(StrUtil.VersionToString(0x00FF000000000000UL, true) != "255.0")
+			if(StrUtil.VersionToString(0x00FF000000000000UL, 2) != "255.0")
 				throw new InvalidOperationException("StrUtil-V5");
-			if(StrUtil.VersionToString(0x0000000000070000UL, true) != "0.0.7")
+			if(StrUtil.VersionToString(0x0000000000070000UL) != "0.0.7")
 				throw new InvalidOperationException("StrUtil-V6");
+			if(StrUtil.VersionToString(0x0000000000000000UL) != "0")
+				throw new InvalidOperationException("StrUtil-V7");
+			if(StrUtil.VersionToString(0x00000000FFFF0000UL, 4) != "0.0.65535.0")
+				throw new InvalidOperationException("StrUtil-V8");
+			if(StrUtil.VersionToString(0x0000000000000000UL, 4) != "0.0.0.0")
+				throw new InvalidOperationException("StrUtil-V9");
 
 			if(StrUtil.RtfEncodeChar('\u0000') != "\\u0?")
 				throw new InvalidOperationException("StrUtil-Rtf1");

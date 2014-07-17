@@ -15,7 +15,6 @@ help\base\autourl.html
 help\base\cmdline.html
 help\base\configuration.html
 help\base\credits.html
-help\base\credits_icons_license.html
 help\base\disclaimer.html
 help\base\faq.html
 help\base\faq_tech.html
@@ -48,6 +47,7 @@ help\v2\sync.html
 help\v2\translation.html
 help\v2\triggers.html
 help\v2\version.html
+help\v2\xml_replace.html
 help\v2_dev\customize.html
 help\v2_dev\plg_index.html
 help\v2_dev\scr_index.html

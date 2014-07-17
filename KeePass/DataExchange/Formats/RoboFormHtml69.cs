@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ namespace KeePass.DataExchange.Formats
 		public override void Import(PwDatabase pwStorage, Stream sInput,
 			IStatusLogger slLogger)
 		{
-			StreamReader sr = new StreamReader(sInput, Encoding.Unicode);
+			StreamReader sr = new StreamReader(sInput, Encoding.Unicode, true);
 			string strData = sr.ReadToEnd();
 			sr.Close();
 
@@ -78,32 +78,19 @@ namespace KeePass.DataExchange.Formats
 		{
 			pg = pd.RootGroup;
 
-			if(strTitle.IndexOf('\\') >= 0)
-			{
-				int nLast = strTitle.LastIndexOf('\\');
-				string strTree = strTitle.Substring(0, nLast);
-				pg = pd.RootGroup.FindCreateSubTree(strTree,
-					new string[1] { "\\" }, true);
+			// In 7.9.5.9 '/' is used; in earlier versions '\\'
+			char[] vSeps = new char[] { '/', '\\' };
 
-				return strTitle.Substring(nLast + 1);
+			int iLastSep = strTitle.LastIndexOfAny(vSeps);
+			if(iLastSep >= 0)
+			{
+				string strTree = strTitle.Substring(0, iLastSep);
+				pg = pd.RootGroup.FindCreateSubTree(strTree, vSeps, true);
+
+				return strTitle.Substring(iLastSep + 1);
 			}
 
 			return strTitle;
-		}
-
-		private static string FixUrl(string strUrl)
-		{
-			strUrl = strUrl.Trim();
-
-			if((strUrl.Length > 0) && (strUrl.IndexOf(':') < 0) &&
-				(strUrl.IndexOf('@') < 0))
-			{
-				string strNew = ("http://" + strUrl.ToLower());
-				if(strUrl.IndexOf('/') < 0) strNew += "/";
-				return strNew;
-			}
-
-			return strUrl;
 		}
 
 		private static string MapKey(string strKey)
@@ -192,7 +179,7 @@ namespace KeePass.DataExchange.Formats
 						}
 						else if(strClass.Equals("subcaption", StrUtil.CaseIgnoreCmp))
 							ImportUtil.AppendToField(pe, PwDefs.UrlField,
-								FixUrl(strText), pd);
+								ImportUtil.FixUrl(strText), pd);
 						else if(strClass.Equals("field", StrUtil.CaseIgnoreCmp))
 						{
 							// 7.9.2.5+

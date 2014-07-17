@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2013 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ namespace KeePass.App
 			public const int AutoTypeSelected = 196;
 			public const int ShowWindow = 226;
 			public const int EntryMenu = 227;
+
+			internal const int TempRegTest = 225;
 		}
 
 		public static class HelpTopics
@@ -103,6 +105,8 @@ namespace KeePass.App
 
 			// public const string FaqTech = "base/faq_tech";
 			// public const string FaqTechMemProt = "memprot";
+
+			public const string XmlReplace = "v2/xml_replace";
 		}
 
 		public static class CommandLineOptions
@@ -136,6 +140,7 @@ namespace KeePass.App
 			public const string OpenEntryUrl = "entry-url-open";
 			public const string LockAll = "lock-all";
 			public const string UnlockAll = "unlock-all";
+			public const string IpcEvent = "e";
 
 			public const string Uuid = "uuid";
 
@@ -162,6 +167,8 @@ namespace KeePass.App
 			public const string SavePluginCompileRes = "saveplgxcr";
 			public const string ShowAssemblyInfo = "showasminfo";
 			public const string MakeXmlSerializerEx = "makexmlserializerex";
+
+			public const string Version = "version";
 
 			// #if (DEBUG && !KeePassLibSD)
 			// public const string MakePopularPasswordTable = "makepopularpasswordtable";
@@ -214,8 +221,8 @@ namespace KeePass.App
 
 		public const string ColumnIdnGroup = "Group";
 		public const string ColumnIdnCreationTime = "CreationTime";
-		public const string ColumnIdnLastAccessTime = "LastAccessTime";
 		public const string ColumnIdnLastModificationTime = "LastModificationTime";
+		public const string ColumnIdnLastAccessTime = "LastAccessTime";
 		public const string ColumnIdnExpiryTime = "ExpiryTime";
 		public const string ColumnIdnUuid = "UUID";
 		public const string ColumnIdnAttachment = "Attachment";
@@ -229,10 +236,10 @@ namespace KeePass.App
 				return ((pe.ParentGroup != null) ? pe.ParentGroup.Name : string.Empty);
 			else if(strFieldId == AppDefs.ColumnIdnCreationTime)
 				return TimeUtil.ToDisplayString(pe.CreationTime);
-			else if(strFieldId == AppDefs.ColumnIdnLastAccessTime)
-				return TimeUtil.ToDisplayString(pe.LastAccessTime);
 			else if(strFieldId == AppDefs.ColumnIdnLastModificationTime)
 				return TimeUtil.ToDisplayString(pe.LastModificationTime);
+			else if(strFieldId == AppDefs.ColumnIdnLastAccessTime)
+				return TimeUtil.ToDisplayString(pe.LastAccessTime);
 			else if(strFieldId == AppDefs.ColumnIdnExpiryTime)
 				return (pe.Expires ? TimeUtil.ToDisplayString(pe.ExpiryTime) :
 					KPRes.NeverExpires);
