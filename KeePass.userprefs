@@ -1,30 +1,24 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|Mixed Platforms" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Translation/TrlUtil/MainForm.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="KeePass/Forms/MainForm.cs">
     <Files>
-      <File FileName="KeePassLib/Serialization/IOConnection.cs" Line="439" Column="30" />
+      <File FileName="KeePassLib/Serialization/IOConnection.cs" Line="439" Column="5" />
       <File FileName="KeePassLib/PwDatabase.cs" Line="758" Column="31" />
-      <File FileName="KeePass/Forms/MainForm.cs" Line="1467" Column="30" />
+      <File FileName="KeePass/Forms/MainForm.cs" Line="150" Column="43" />
       <File FileName="KeePass/DataExchange/ImportUtil.cs" Line="124" Column="1" />
-      <File FileName="KeePassLib/Serialization/FileTransactionEx.cs" Line="121" Column="1" />
-      <File FileName="KeePass/Forms/MainForm_Functions.cs" Line="269" Column="48" />
+      <File FileName="KeePassLib/Serialization/FileTransactionEx.cs" Line="127" Column="28" />
+      <File FileName="KeePass/Forms/MainForm_Functions.cs" Line="274" Column="54" />
       <File FileName="KeePass/Program.cs" Line="402" Column="1" />
-      <File FileName="Translation/TrlUtil/MainForm.cs" Line="107" Column="52" />
-      <File FileName="KeePassLib/Serialization/IOConnection.cs" Line="439" Column="30" />
-      <File FileName="KeePassLib/PwDatabase.cs" Line="758" Column="31" />
-      <File FileName="KeePass/Forms/MainForm.cs" Line="1467" Column="30" />
-      <File FileName="KeePass/DataExchange/ImportUtil.cs" Line="124" Column="1" />
-      <File FileName="KeePassLib/Serialization/FileTransactionEx.cs" Line="121" Column="1" />
-      <File FileName="KeePass/Forms/MainForm_Functions.cs" Line="269" Column="48" />
-      <File FileName="KeePass/Program.cs" Line="402" Column="1" />
-      <File FileName="Translation/TrlUtil/MainForm.cs" Line="107" Column="52" />
+      <File FileName="Translation/TrlUtil/MainForm.cs" Line="143" Column="5" />
+      <File FileName="KeePass/App/AppDefs.cs" Line="7" Column="47" />
+      <File FileName="KeePassLib/PwDefs.cs" Line="69" Column="54" />
+      <File FileName="KeePass/Properties/Resources.Designer.cs" Line="47" Column="10" />
+      <File FileName="KeePass/Properties/Resources.resx" Line="38" Column="5" />
+      <File FileName="KeePassLib/Keys/CompositeKey.cs" Line="33" Column="18" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True">
-          <Node name="KeePass" expanded="True" selected="True" />
-          <Node name="KeePassLib" expanded="True" />
-        </State>
+        <State expanded="True" />
       </Pad>
       <Pad Id="ClassPad">
         <State expanded="True" selected="True" />
@@ -39,9 +33,7 @@
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
       <Breakpoint file="/home/will/src/keepass-workspace/keepass/KeePass/DataExchange/ImportUtil.cs" line="136" />
-      <Breakpoint file="/home/will/src/keepass-workspace/keepass/KeePassLib/Serialization/FileTransactionEx.cs" line="121" />
       <Breakpoint file="/home/will/src/keepass-workspace/keepass/KeePassLib/Serialization/IOConnection.cs" line="432" />
-      <Breakpoint file="/home/will/src/keepass-workspace/keepass/KeePass/Forms/MainForm_Functions.cs" line="265" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
