@@ -157,7 +157,7 @@ namespace KeePass.DataExchange
 				        MessageService.ShowWarning(iocIn.GetDisplayName(), exFile);
 				        bAllSuccess = false;
 				        continue;
-					}
+				    }
 				}
 				if(s == null) { Debug.Assert(false); bAllSuccess = false; continue; }
 
@@ -439,7 +439,7 @@ namespace KeePass.DataExchange
 			"member", "member #",
 
 			// Non-English names
-			"nom"
+			"nom", "benutzername"
 		};
 
 		private static readonly string[] m_vPasswords = {
@@ -448,7 +448,10 @@ namespace KeePass.DataExchange
 			"secret", "secret word",
 			"key", "keyword", "key word", "keyphrase", "key phrase",
 			"form_pw", "wppassword", "pin", "pwd", "pw", "pword",
-			"p", "serial", "serial#", "license key", "reg #"
+			"p", "serial", "serial#", "license key", "reg #",
+
+			// Non-English names
+			"passwort"
 		};
 
 		private static readonly string[] m_vUrls = {
@@ -458,13 +461,16 @@ namespace KeePass.DataExchange
 			"web-site",
 
 			// Non-English names
-			"ort"
+			"ort", "adresse"
 		};
 
 		private static readonly string[] m_vNotes = {
 			"note", "notes", "comment", "comments", "memo",
 			"description", "free form", "freeform",
-			"free text", "freetext", "free"
+			"free text", "freetext", "free",
+
+			// Non-English names
+			"kommentar"
 		};
 
 		private static readonly string[] m_vSubstrTitles = {
