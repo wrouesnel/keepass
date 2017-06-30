@@ -1,0 +1,10 @@
+language: csharp
+solution: KeePass.sln
+mono:
+- 3.2.8
+script:
+- cd Build
+- ./SetVersion.sh
+- ./SnKeys_UseUnique.sh
+- cd ..
+- xbuild /p:Configuration=Release KeePass.sln
