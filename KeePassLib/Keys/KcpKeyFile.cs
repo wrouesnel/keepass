@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,12 +18,15 @@
 */
 
 using System;
-using System.Text;
-using System.IO;
-using System.Xml;
-using System.Security;
-using System.Security.Cryptography;
 using System.Diagnostics;
+using System.IO;
+using System.Security;
+using System.Text;
+using System.Xml;
+
+#if !KeePassUAP
+using System.Security.Cryptography;
+#endif
 
 using KeePassLib.Cryptography;
 using KeePassLib.Resources;
@@ -130,10 +133,7 @@ namespace KeePassLib.Keys
 			else if(iLength == 64) pbKey = LoadHexKey32(pbFileData);
 
 			if(pbKey == null)
-			{
-				SHA256Managed sha256 = new SHA256Managed();
-				pbKey = sha256.ComputeHash(pbFileData);
-			}
+				pbKey = CryptoUtil.HashSha256(pbFileData);
 
 			return pbKey;
 		}
@@ -153,12 +153,15 @@ namespace KeePassLib.Keys
 
 			try
 			{
-				string strHex = StrUtil.Utf8.GetString(pbFileData, 0, 64);
-				if(!StrUtil.IsHexString(strHex, true)) return null;
+				if(!StrUtil.IsHexString(pbFileData, true)) return null;
 
+				string strHex = StrUtil.Utf8.GetString(pbFileData);
 				byte[] pbKey = MemUtil.HexStringToByteArray(strHex);
 				if((pbKey == null) || (pbKey.Length != 32))
+				{
+					Debug.Assert(false);
 					return null;
+				}
 
 				return pbKey;
 			}
@@ -186,13 +189,13 @@ namespace KeePassLib.Keys
 				pbFinalKey32 = pbKey32;
 			else
 			{
-				MemoryStream ms = new MemoryStream();
-				ms.Write(pbAdditionalEntropy, 0, pbAdditionalEntropy.Length);
-				ms.Write(pbKey32, 0, 32);
+				using(MemoryStream ms = new MemoryStream())
+				{
+					MemUtil.Write(ms, pbAdditionalEntropy);
+					MemUtil.Write(ms, pbKey32);
 
-				SHA256Managed sha256 = new SHA256Managed();
-				pbFinalKey32 = sha256.ComputeHash(ms.ToArray());
-				ms.Close();
+					pbFinalKey32 = CryptoUtil.HashSha256(ms.ToArray());
+				}
 			}
 
 			CreateXmlKeyFile(strFilePath, pbFinalKey32);
@@ -267,7 +270,15 @@ namespace KeePassLib.Keys
 			IOConnectionInfo ioc = IOConnectionInfo.FromPath(strFile);
 			Stream sOut = IOConnection.OpenWrite(ioc);
 
+#if KeePassUAP
+			XmlWriterSettings xws = new XmlWriterSettings();
+			xws.Encoding = StrUtil.Utf8;
+			xws.Indent = false;
+
+			XmlWriter xtw = XmlWriter.Create(sOut, xws);
+#else
 			XmlTextWriter xtw = new XmlTextWriter(sOut, StrUtil.Utf8);
+#endif
 
 			xtw.WriteStartDocument();
 			xtw.WriteWhitespace("\r\n");

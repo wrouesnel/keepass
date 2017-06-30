@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
-using System.Windows.Forms;
 using System.Threading;
-using System.Diagnostics;
+using System.Windows.Forms;
 
 using KeePass.App;
 using KeePass.App.Configuration;
@@ -58,7 +58,7 @@ namespace KeePass.Forms
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_View_Detailed,
 				KPRes.ConfigureColumns, KPRes.ConfigureColumnsDesc);
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = KPRes.ConfigureColumns;
 
 			float fWidth = (float)(m_lvColumns.ClientRectangle.Width -
@@ -219,10 +219,12 @@ namespace KeePass.Forms
 			}
 
 			AddStdAceColumn(l, AceColumnType.Size);
+			AddStdAceColumn(l, AceColumnType.AttachmentCount);
 			AddStdAceColumn(l, AceColumnType.HistoryCount);
 			AddStdAceColumn(l, AceColumnType.OverrideUrl);
 			AddStdAceColumn(l, AceColumnType.Tags);
 			AddStdAceColumn(l, AceColumnType.ExpiryTimeDateOnly);
+			AddStdAceColumn(l, AceColumnType.LastPasswordModTime);
 
 			d.Clear();
 			// Add active plugin columns (including those of uninstalled plugins)

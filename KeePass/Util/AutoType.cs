@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,12 +19,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Media;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using System.Threading;
-using System.Media;
-using System.Diagnostics;
+using System.Windows.Forms;
 
 using KeePass.App;
 using KeePass.Forms;
@@ -73,11 +74,15 @@ namespace KeePass.Util
 
 	public static class AutoType
 	{
+		private const int TargetActivationDelay = 100;
+
 		public static event EventHandler<AutoTypeEventArgs> FilterCompilePre;
 		public static event EventHandler<AutoTypeEventArgs> FilterSendPre;
 		public static event EventHandler<AutoTypeEventArgs> FilterSend;
 
+		public static event EventHandler<SequenceQueryEventArgs> SequenceQueryPre;
 		public static event EventHandler<SequenceQueryEventArgs> SequenceQuery;
+		public static event EventHandler<SequenceQueryEventArgs> SequenceQueryPost;
 
 		public static event EventHandler<SequenceQueriesEventArgs> SequenceQueriesBegin;
 		public static event EventHandler<SequenceQueriesEventArgs> SequenceQueriesEnd;
@@ -102,7 +107,7 @@ namespace KeePass.Util
 			catch(Exception) { Debug.Assert(false); }
 		}
 
-		private static bool MatchWindows(string strFilter, string strWindow)
+		internal static bool MatchWindows(string strFilter, string strWindow)
 		{
 			Debug.Assert(strFilter != null); if(strFilter == null) return false;
 			Debug.Assert(strWindow != null); if(strWindow == null) return false;
@@ -186,11 +191,26 @@ namespace KeePass.Util
 
 			if(args.Sequence.Length > 0)
 			{
+				string strError = null;
 				try { SendInputEx.SendKeysWait(args.Sequence, args.SendObfuscated); }
-				catch(Exception excpAT)
+				catch(SecurityException exSec) { strError = exSec.Message; }
+				catch(Exception ex)
 				{
-					MessageService.ShowWarning(args.Sequence +
-						MessageService.NewParagraph + excpAT.Message);
+					strError = args.Sequence + MessageService.NewParagraph +
+						ex.Message;
+				}
+
+				if(!string.IsNullOrEmpty(strError))
+				{
+					try
+					{
+						MainForm mfP = Program.MainForm;
+						if(mfP != null)
+							mfP.EnsureVisibleForegroundWindow(false, false);
+					}
+					catch(Exception) { Debug.Assert(false); }
+
+					MessageService.ShowWarning(strError);
 				}
 			}
 
@@ -246,7 +266,7 @@ namespace KeePass.Util
 				AutoType.SequenceQueriesEnd(null, e);
 		}
 
-		// Multiple calls of this method should be wrapped in
+		// Multiple calls of this method are wrapped in
 		// GetSequencesForWindowBegin and GetSequencesForWindowEnd
 		private static List<string> GetSequencesForWindow(PwEntry pwe,
 			IntPtr hWnd, string strWindow, PwDatabase pdContext, int iEventID)
@@ -254,12 +274,15 @@ namespace KeePass.Util
 			List<string> l = new List<string>();
 
 			if(pwe == null) { Debug.Assert(false); return l; }
-			if(strWindow == null) { Debug.Assert(false); return l; }
+			if(strWindow == null) { Debug.Assert(false); return l; } // May be empty
 
 			if(!pwe.GetAutoTypeEnabled()) return l;
 
 			SprContext sprCtx = new SprContext(pwe, pdContext,
 				SprCompileFlags.NonActive);
+
+			RaiseSequenceQueryEvent(AutoType.SequenceQueryPre, iEventID,
+				hWnd, strWindow, pwe, pdContext, l);
 
 			// Specifically defined sequences must match before the title,
 			// in order to allow selecting the first item as default one
@@ -278,6 +301,9 @@ namespace KeePass.Util
 					AddSequence(l, strSeq);
 				}
 			}
+
+			RaiseSequenceQueryEvent(AutoType.SequenceQuery, iEventID,
+				hWnd, strWindow, pwe, pdContext, l);
 
 			if(Program.Config.Integration.AutoTypeMatchByTitle)
 			{
@@ -331,21 +357,31 @@ namespace KeePass.Util
 				}
 			}
 
-			if(AutoType.SequenceQuery != null)
-			{
-				SequenceQueryEventArgs e = new SequenceQueryEventArgs(iEventID,
-					hWnd, strWindow, pwe, pdContext);
-				AutoType.SequenceQuery(null, e);
-
-				foreach(string strSeq in e.Sequences)
-					AddSequence(l, strSeq);
-			}
+			RaiseSequenceQueryEvent(AutoType.SequenceQueryPost, iEventID,
+				hWnd, strWindow, pwe, pdContext, l);
 
 			return l;
 		}
 
+		private static void RaiseSequenceQueryEvent(
+			EventHandler<SequenceQueryEventArgs> f, int iEventID, IntPtr hWnd,
+			string strWindow, PwEntry pwe, PwDatabase pdContext,
+			List<string> lSeq)
+		{
+			if(f == null) return;
+
+			SequenceQueryEventArgs e = new SequenceQueryEventArgs(iEventID,
+				hWnd, strWindow, pwe, pdContext);
+			f(null, e);
+
+			foreach(string strSeq in e.Sequences)
+				AddSequence(lSeq, strSeq);
+		}
+
 		private static void AddSequence(List<string> lSeq, string strSeq)
 		{
+			if(strSeq == null) { Debug.Assert(false); return; }
+
 			string strCanSeq = CanonicalizeSeq(strSeq);
 
 			for(int i = 0; i < lSeq.Count; ++i)
@@ -427,7 +463,8 @@ namespace KeePass.Util
 			}
 			catch(Exception) { Debug.Assert(false); hWnd = IntPtr.Zero; strWindow = null; }
 
-			if(string.IsNullOrEmpty(strWindow)) return false;
+			// if(string.IsNullOrEmpty(strWindow)) return false;
+			if(strWindow == null) { Debug.Assert(false); return false; }
 			if(!IsValidAutoTypeWindow(hWnd, true)) return false;
 
 			SequenceQueriesEventArgs evQueries = GetSequencesForWindowBegin(
@@ -435,12 +472,13 @@ namespace KeePass.Util
 
 			List<AutoTypeCtx> lCtxs = new List<AutoTypeCtx>();
 			PwDatabase pdCurrent = null;
-			DateTime dtNow = DateTime.Now;
+			bool bExpCanMatch = Program.Config.Integration.AutoTypeExpiredCanMatch;
+			DateTime dtNow = DateTime.UtcNow;
 
 			EntryHandler eh = delegate(PwEntry pe)
 			{
-				// Ignore expired entries
-				if(pe.Expires && (pe.ExpiryTime < dtNow)) return true;
+				if(!bExpCanMatch && pe.Expires && (pe.ExpiryTime <= dtNow))
+					return true; // Ignore expired entries
 
 				List<string> lSeq = GetSequencesForWindow(pe, hWnd, strWindow,
 					pdCurrent, evQueries.EventID);
@@ -461,23 +499,47 @@ namespace KeePass.Util
 
 			GetSequencesForWindowEnd(evQueries);
 
-			if(lCtxs.Count == 1)
-				AutoType.PerformInternal(lCtxs[0], strWindow);
-			else if(lCtxs.Count > 1)
+			bool bForceDlg = Program.Config.Integration.AutoTypeAlwaysShowSelDialog;
+
+			if((lCtxs.Count >= 2) || bForceDlg)
 			{
 				AutoTypeCtxForm dlg = new AutoTypeCtxForm();
 				dlg.InitEx(lCtxs, ilIcons);
 
-				if(dlg.ShowDialog() == DialogResult.OK)
+				bool bOK = (dlg.ShowDialog() == DialogResult.OK);
+				AutoTypeCtx ctx = (bOK ? dlg.SelectedCtx : null);
+				UIUtil.DestroyForm(dlg);
+
+				if(ctx != null)
 				{
 					try { NativeMethods.EnsureForegroundWindow(hWnd); }
 					catch(Exception) { Debug.Assert(false); }
 
-					if(dlg.SelectedCtx != null)
-						AutoType.PerformInternal(dlg.SelectedCtx, strWindow);
+					int nActDelayMS = TargetActivationDelay;
+					string strWindowT = strWindow.Trim();
+
+					// https://sourceforge.net/p/keepass/discussion/329220/thread/3681f343/
+					// This apparently is only required here (after showing the
+					// auto-type entry selection dialog), not when using the
+					// context menu command in the main window
+					if(strWindowT.EndsWith("Microsoft Edge", StrUtil.CaseIgnoreCmp))
+					{
+						// 700 skips the first 1-2 characters,
+						// 750 sometimes skips the first character
+						nActDelayMS = 1000;
+					}
+
+					// Allow target window to handle its activation
+					// (required by some applications, e.g. Edge)
+					Application.DoEvents();
+					Thread.Sleep(nActDelayMS);
+					Application.DoEvents();
+
+					AutoType.PerformInternal(ctx, strWindow);
 				}
-				UIUtil.DestroyForm(dlg);
 			}
+			else if(lCtxs.Count == 1)
+				AutoType.PerformInternal(lCtxs[0], strWindow);
 
 			return true;
 		}
@@ -536,6 +598,8 @@ namespace KeePass.Util
 			if(!pe.GetAutoTypeEnabled()) return false;
 			if(!AppPolicy.Try(AppPolicyId.AutoTypeWithoutContext)) return false;
 
+			Thread.Sleep(TargetActivationDelay);
+
 			IntPtr hWnd;
 			string strWindow;
 			try
@@ -549,8 +613,6 @@ namespace KeePass.Util
 				if(strWindow == null) { Debug.Assert(false); return false; }
 			}
 			else strWindow = string.Empty;
-
-			Thread.Sleep(100);
 
 			if(strSeq == null)
 			{

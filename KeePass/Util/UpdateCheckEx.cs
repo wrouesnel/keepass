@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using System.Diagnostics;
 
+using KeePass.App;
 using KeePass.Forms;
 using KeePass.Plugins;
 using KeePass.Resources;
@@ -102,6 +104,9 @@ namespace KeePass.Util
 
 	public static class UpdateCheckEx
 	{
+		private static Dictionary<string, string> g_dFileSigKeys =
+			new Dictionary<string, string>();
+
 		private sealed class UpdateCheckParams
 		{
 			public readonly bool ForceUI;
@@ -116,7 +121,7 @@ namespace KeePass.Util
 
 		public static void Run(bool bForceUI, Form fOptParent)
 		{
-			DateTime dtNow = DateTime.Now, dtLast;
+			DateTime dtNow = DateTime.UtcNow, dtLast;
 			string strLast = Program.Config.Application.LastUpdateCheck;
 			if(!bForceUI && (strLast.Length > 0) && TimeUtil.TryDeserializeUtc(
 				strLast, out dtLast))
@@ -145,6 +150,7 @@ namespace KeePass.Util
 
 		private static int CompareDates(DateTime a, DateTime b)
 		{
+			Debug.Assert(a.Kind == b.Kind);
 			if(a.Year != b.Year) return ((a.Year < b.Year) ? -1 : 1);
 			if(a.Month != b.Month) return ((a.Month < b.Month) ? -1 : 1);
 			if(a.Day != b.Day) return ((a.Day < b.Day) ? -1 : 1);
@@ -232,7 +238,7 @@ namespace KeePass.Util
 		private sealed class UpdateDownloadInfo
 		{
 			public readonly string Url; // Never null
-			public object SyncObj = new object();
+			public readonly object SyncObj = new object();
 			public bool Ready = false;
 			public List<UpdateComponentInfo> ComponentInfo = null;
 
@@ -369,6 +375,11 @@ namespace KeePass.Util
 			strData = StrUtil.NormalizeNewLines(strData, false);
 			string[] vLines = strData.Split('\n');
 
+			string strSigKey;
+			g_dFileSigKeys.TryGetValue(iocSource.Path.ToLowerInvariant(), out strSigKey);
+			string strLdSig = null;
+			StringBuilder sbToVerify = ((strSigKey != null) ? new StringBuilder() : null);
+
 			List<UpdateComponentInfo> l = new List<UpdateComponentInfo>();
 			bool bHeader = true, bFooterFound = false;
 			char chSep = ':'; // Modified by header
@@ -381,6 +392,9 @@ namespace KeePass.Util
 				{
 					chSep = str[0];
 					bHeader = false;
+
+					string[] vHdr = str.Split(chSep);
+					if(vHdr.Length >= 2) strLdSig = vHdr[1];
 				}
 				else if(str[0] == chSep)
 				{
@@ -389,7 +403,13 @@ namespace KeePass.Util
 				}
 				else // Component info
 				{
-					string[] vInfo = str.Split(new char[] { chSep });
+					if(sbToVerify != null)
+					{
+						sbToVerify.Append(str);
+						sbToVerify.Append('\n');
+					}
+
+					string[] vInfo = str.Split(chSep);
 					if(vInfo.Length >= 2)
 					{
 						UpdateComponentInfo c = new UpdateComponentInfo(
@@ -400,8 +420,15 @@ namespace KeePass.Util
 					}
 				}
 			}
+			if(!bFooterFound) { Debug.Assert(false); return null; }
 
-			return (bFooterFound ? l : null);
+			if(sbToVerify != null)
+			{
+				if(!VerifySignature(sbToVerify.ToString(), strLdSig, strSigKey))
+					return null;
+			}
+
+			return l;
 		}
 
 		private static void AddComponent(List<UpdateComponentInfo> l,
@@ -497,8 +524,53 @@ namespace KeePass.Util
 			return false;
 		}
 
+		private static bool VerifySignature(string strContent, string strSig,
+			string strKey)
+		{
+			if(string.IsNullOrEmpty(strSig)) { Debug.Assert(false); return false; }
+
+			try
+			{
+				byte[] pbMsg = StrUtil.Utf8.GetBytes(strContent);
+				byte[] pbSig = Convert.FromBase64String(strSig);
+
+				using(SHA512Managed sha = new SHA512Managed())
+				{
+					using(RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+					{
+						// Watching this code in the debugger may result in a
+						// CryptographicException when disposing the object
+						rsa.PersistKeyInCsp = false; // Default key
+						rsa.FromXmlString(strKey);
+						rsa.PersistKeyInCsp = false; // Loaded key
+
+						if(!rsa.VerifyData(pbMsg, sha, pbSig))
+						{
+							Debug.Assert(false);
+							return false;
+						}
+
+						rsa.PersistKeyInCsp = false;
+					}
+				}
+			}
+			catch(Exception) { Debug.Assert(false); return false; }
+
+			return true;
+		}
+
+		public static void SetFileSigKey(string strUrl, string strKey)
+		{
+			if(string.IsNullOrEmpty(strUrl)) { Debug.Assert(false); return; }
+			if(string.IsNullOrEmpty(strKey)) { Debug.Assert(false); return; }
+
+			g_dFileSigKeys[strUrl.ToLowerInvariant()] = strKey;
+		}
+
 		public static void EnsureConfigured(Form fParent)
 		{
+			SetFileSigKey(PwDefs.VersionUrl, AppDefs.Rsa4096PublicKeyXml);
+
 			if(Program.Config.Application.Start.CheckForUpdateConfigured) return;
 
 			// If the user has manually enabled the automatic update check

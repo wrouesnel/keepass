@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,18 +20,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 using System.Xml;
 using System.Xml.Serialization;
-using System.IO;
 
 using KeePass.App;
-using KeePass.UI;
-using KeePass.Resources;
 using KeePass.Ecas;
+using KeePass.Resources;
+using KeePass.UI;
 using KeePass.Util;
 
 using KeePassLib;
@@ -82,7 +82,7 @@ namespace KeePass.Forms
 				Properties.Resources.B48x48_Make_KDevelop, KPRes.Triggers,
 				KPRes.TriggersDesc);
 			this.Text = KPRes.Triggers;
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 
 			int nWidth = (m_lvTriggers.ClientSize.Width - UIUtil.GetVScrollBarWidth() - 1);
 			m_lvTriggers.Columns.Add(KPRes.Triggers, nWidth);
@@ -190,7 +190,7 @@ namespace KeePass.Forms
 
 		private void OnBtnTools(object sender, EventArgs e)
 		{
-			m_ctxTools.Show(m_btnTools, new Point(0, m_btnTools.Size.Height));
+			m_ctxTools.ShowEx(m_btnTools);
 		}
 
 		private void OnCtxToolsHelp(object sender, EventArgs e)

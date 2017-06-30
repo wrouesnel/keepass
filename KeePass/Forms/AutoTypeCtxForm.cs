@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 using KeePass.App;
 using KeePass.App.Configuration;
@@ -74,13 +74,14 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
-			m_lblText.Text = KPRes.AutoTypeEntrySelectionDescLong;
-			this.Text = KPRes.AutoTypeEntrySelection;
-			this.Icon = Properties.Resources.KeePass;
+			Debug.Assert(!m_lblText.AutoSize); // For RTL support
+			m_lblText.Text = KPRes.AutoTypeEntrySelectionDescLong2;
 
-			string strRect = Program.Config.UI.AutoTypeCtxRect;
-			if(strRect.Length > 0) UIUtil.SetWindowScreenRect(this, strRect);
-			m_strInitialFormRect = UIUtil.GetWindowScreenRect(this);
+			this.Text = KPRes.AutoTypeEntrySelection;
+			this.Icon = AppIcons.Default;
+
+			m_strInitialFormRect = UIUtil.SetWindowScreenRectEx(this,
+				Program.Config.UI.AutoTypeCtxRect);
 
 			UIUtil.SetExplorerTheme(m_lvItems, true);
 
@@ -125,7 +126,7 @@ namespace KeePass.Forms
 				Program.Config.UI.AutoTypeCtxColumnWidths = strColWidths;
 
 			string strRect = UIUtil.GetWindowScreenRect(this);
-			if(strRect != m_strInitialFormRect)
+			if(strRect != m_strInitialFormRect) // Don't overwrite ""
 				Program.Config.UI.AutoTypeCtxRect = strRect;
 
 			DestroyToolsContextMenu();
@@ -140,9 +141,20 @@ namespace KeePass.Forms
 
 		private void ProcessResize()
 		{
+			if(m_lCtxs == null) return; // TrlUtil or design mode
+
+			string strSub = KPRes.AutoTypeEntrySelectionDescShort;
+			int n = m_lCtxs.Count;
+			if(n == 1) strSub = KPRes.SearchEntriesFound1 + ".";
+			else if(n <= 0)
+			{
+				strSub = KPRes.SearchEntriesFound + ".";
+				strSub = strSub.Replace(@"{PARAM}", "0");
+			}
+
 			BannerFactory.UpdateBanner(this, m_bannerImage,
 				Properties.Resources.B48x48_KGPG_Key2, KPRes.AutoTypeEntrySelection,
-				KPRes.AutoTypeEntrySelectionDescShort, ref m_nBannerWidth);
+				strSub, ref m_nBannerWidth);
 		}
 
 		private bool GetSelectedEntry()
@@ -169,6 +181,9 @@ namespace KeePass.Forms
 			ProcessItemSelection();
 		}
 
+		// The item activation handler has a slight delay when clicking an
+		// item, thus as a performance optimization we additionally handle
+		// item clicks
 		private void OnListClick(object sender, EventArgs e)
 		{
 			ProcessItemSelection();
@@ -265,7 +280,7 @@ namespace KeePass.Forms
 		private void OnBtnTools(object sender, EventArgs e)
 		{
 			RecreateToolsContextMenu();
-			m_ctxTools.Show(m_btnTools, 0, m_btnTools.Height);
+			m_ctxTools.ShowEx(m_btnTools);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Text;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 using KeePass.App;
 using KeePass.App.Configuration;
@@ -82,7 +82,7 @@ namespace KeePass.Forms
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_KGPG_Sign, KPRes.CreateMasterKey,
 				m_ioInfo.GetDisplayName());
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = KPRes.CreateMasterKey;
 
 			FontUtil.SetDefaultFont(m_cbPassword);
@@ -91,15 +91,18 @@ namespace KeePass.Forms
 			FontUtil.AssignDefaultBold(m_cbUserAccount);
 
 			Bitmap bmpBig = SystemIcons.Warning.ToBitmap();
-			m_imgAccWarning = UIUtil.CreateScaledImage(bmpBig, 16, 16);
+			m_imgAccWarning = GfxUtil.ScaleImage(bmpBig, DpiUtil.ScaleIntX(16),
+				DpiUtil.ScaleIntY(16), ScaleTransformFlags.UIIcon);
 			bmpBig.Dispose();
 			m_picAccWarning.Image = m_imgAccWarning;
 
+			UIUtil.ConfigureToolTip(m_ttRect);
 			// m_ttRect.SetToolTip(m_cbHidePassword, KPRes.TogglePasswordAsterisks);
 			m_ttRect.SetToolTip(m_btnSaveKeyFile, KPRes.KeyFileCreate);
 			m_ttRect.SetToolTip(m_btnOpenKeyFile, KPRes.KeyFileUseExisting);
 			m_ttRect.SetToolTip(m_tbRepeatPassword, KPRes.PasswordRepeatHint);
 
+			Debug.Assert(!m_lblIntro.AutoSize); // For RTL support
 			if(!m_bCreatingNew)
 				m_lblIntro.Text = KPRes.ChangeMasterKeyIntroShort;
 
@@ -196,7 +199,7 @@ namespace KeePass.Forms
 					string strMQ = KPRes.MasterPasswordMinQualityFailed;
 					strMQ = strMQ.Replace(@"{PARAM}", uMinQual.ToString());
 					MessageService.ShowWarning(strMQ);
-					Array.Clear(pb, 0, pb.Length);
+					MemUtil.ZeroByteArray(pb);
 					return false;
 				}
 
@@ -205,12 +208,12 @@ namespace KeePass.Forms
 				if(strValRes != null)
 				{
 					MessageService.ShowWarning(strValRes);
-					Array.Clear(pb, 0, pb.Length);
+					MemUtil.ZeroByteArray(pb);
 					return false;
 				}
 
 				m_pKey.AddUserKey(new KcpPassword(pb));
-				Array.Clear(pb, 0, pb.Length);
+				MemUtil.ZeroByteArray(pb);
 			}
 
 			string strKeyFile = m_cmbKeyFile.Text;
@@ -249,7 +252,7 @@ namespace KeePass.Forms
 						return false;
 					}
 
-					Array.Clear(pbCustomKey, 0, pbCustomKey.Length);
+					MemUtil.ZeroByteArray(pbCustomKey);
 				}
 				else return false; // Provider has shown error message
 			}
@@ -271,10 +274,15 @@ namespace KeePass.Forms
 		{
 			m_icgPassword.Enabled = m_cbPassword.Checked;
 
-			m_btnOpenKeyFile.Enabled = m_btnSaveKeyFile.Enabled =
-				m_cmbKeyFile.Enabled = m_cbKeyFile.Checked;
+			bool bKeyFile = m_cbKeyFile.Checked;
+			m_cmbKeyFile.Enabled = bKeyFile;
 
 			string strKeyFile = m_cmbKeyFile.Text;
+
+			bool bKeyProv = (!strKeyFile.Equals(KPRes.NoKeyFileSpecifiedMeta) &&
+				Program.KeyProviderPool.IsKeyProvider(strKeyFile));
+			m_btnOpenKeyFile.Enabled = m_btnSaveKeyFile.Enabled =
+				(bKeyFile && !bKeyProv);
 
 			if(!m_cbPassword.Checked && !m_cbKeyFile.Checked && !m_cbUserAccount.Checked)
 				m_btnCreate.Enabled = false;
@@ -348,8 +356,22 @@ namespace KeePass.Forms
 
 			if(ofd.ShowDialog() == DialogResult.OK)
 			{
-				string str = ofd.FileName;
-				m_cmbKeyFile.Items.Add(str);
+				string strFile = ofd.FileName;
+
+				// try
+				// {
+				//	IOConnectionInfo ioc = IOConnectionInfo.FromPath(strFile);
+				//	if(ioc.IsLocalFile())
+				//	{
+				//		FileInfo fi = new FileInfo(strFile);
+				//		if(fi.Length >= (100 * 1024 * 1024))
+				//		{
+				//		}
+				//	}
+				// }
+				// catch(Exception) { Debug.Assert(false); }
+
+				m_cmbKeyFile.Items.Add(strFile);
 				m_cmbKeyFile.SelectedIndex = m_cmbKeyFile.Items.Count - 1;
 			}
 

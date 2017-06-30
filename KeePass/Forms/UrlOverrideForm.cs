@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
+using KeePass.App;
 using KeePass.App.Configuration;
 using KeePass.Resources;
 using KeePass.UI;
@@ -51,7 +52,7 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = KPRes.UrlOverride;
 
 			m_tbScheme.Text = m_ovr.Scheme;

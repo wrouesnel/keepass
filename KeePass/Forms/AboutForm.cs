@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,17 +20,17 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.IO;
-using System.Diagnostics;
 
 using KeePass.App;
-using KeePass.UI;
-using KeePass.Resources;
-using KeePass.Util;
 using KeePass.DataExchange;
+using KeePass.Resources;
+using KeePass.UI;
+using KeePass.Util;
 
 using KeePassLib;
 using KeePassLib.Utility;
@@ -51,16 +51,29 @@ namespace KeePass.Forms
 		{
 			GlobalWindowManager.AddWindow(this, this);
 
+			Debug.Assert(!m_lblCopyright.AutoSize); // For RTL support
 			m_lblCopyright.Text = PwDefs.Copyright + ".";
 
 			string strTitle = PwDefs.ProductName;
 			string strDesc = KPRes.Version + " " + PwDefs.VersionString;
+			if(Program.IsDevelopmentSnapshot())
+			{
+				strDesc += " (Dev.";
+				try
+				{
+					string strExe = WinUtil.GetExecutable();
+					FileInfo fi = new FileInfo(strExe);
+					strDesc += " " + fi.LastWriteTimeUtc.ToString("yyMMdd");
+				}
+				catch(Exception) { Debug.Assert(false); }
+				strDesc += ")";
+			}
 
-			Icon icoNew = new Icon(Properties.Resources.KeePass, 48, 48);
-
-			BannerFactory.CreateBannerEx(this, m_bannerImage, icoNew.ToBitmap(),
+			Icon icoSc = AppIcons.Get(AppIconType.Main, new Size(
+				DpiUtil.ScaleIntX(48), DpiUtil.ScaleIntY(48)), Color.Empty);
+			BannerFactory.CreateBannerEx(this, m_bannerImage, icoSc.ToBitmap(),
 				strTitle, strDesc);
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 
 			m_lvComponents.Columns.Add(KPRes.Component, 100, HorizontalAlignment.Left);
 			m_lvComponents.Columns.Add(KPRes.Status + " / " + KPRes.Version, 100,
@@ -89,8 +102,8 @@ namespace KeePass.Forms
 			strPath = UrlUtil.GetFileDirectory(strPath, true, false);
 			strPath += AppDefs.XslFilesDir;
 			strPath = UrlUtil.EnsureTerminatingSeparator(strPath, false);
-			bool bInstalled = File.Exists(strPath + AppDefs.XslFileHtmlLite);
-			bInstalled &= File.Exists(strPath + AppDefs.XslFileHtmlFull);
+			bool bInstalled = File.Exists(strPath + AppDefs.XslFileHtmlFull);
+			bInstalled &= File.Exists(strPath + AppDefs.XslFileHtmlLight);
 			bInstalled &= File.Exists(strPath + AppDefs.XslFileHtmlTabular);
 			if(!bInstalled) lvi.SubItems.Add(KPRes.NotInstalled);
 			else lvi.SubItems.Add(KPRes.Installed);

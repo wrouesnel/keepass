@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Drawing.Drawing2D;
-using System.Windows.Forms;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 using KeePass.App;
 using KeePass.Util;
@@ -34,7 +34,6 @@ namespace KeePass.UI
 {
 	public enum BannerStyle
 	{
-		// [Browsable(false)]
 		Default = 0,
 
 		WinXPLogin = 1,
@@ -130,15 +129,6 @@ namespace KeePass.UI
 			{
 				img = new Bitmap(nWidth, nHeight, PixelFormat.Format24bppRgb);
 				Graphics g = Graphics.FromImage(img);
-				int xIcon = DpiScaleInt(10, nHeight);
-
-				bool bRtl = Program.Translation.Properties.RightToLeft;
-				Matrix mxTrfOrg = g.Transform;
-				if(bRtl)
-				{
-					g.TranslateTransform(nWidth, 0.0f);
-					g.ScaleTransform(-1.0f, 1.0f);
-				}
 
 				Color clrStart = Color.White;
 				Color clrEnd = Color.LightBlue;
@@ -147,6 +137,8 @@ namespace KeePass.UI
 				if(bs == BannerStyle.BlueCarbon)
 				{
 					fAngle = fVert;
+
+					g.Clear(Color.Black); // Area from 3/8 to 1/2 height
 
 					clrStart = Color.LightGray;
 					clrEnd = Color.Black;
@@ -158,14 +150,25 @@ namespace KeePass.UI
 						g.FillRectangle(brCarbonT, rect);
 					}
 
-					clrStart = Color.FromArgb(0, 0, 32);
-					clrEnd = Color.FromArgb(192, 192, 255);
+					// clrStart = Color.FromArgb(0, 0, 32);
+					clrStart = Color.FromArgb(0, 0, 28);
+					// clrEnd = Color.FromArgb(192, 192, 255);
+					clrEnd = Color.FromArgb(155, 155, 214);
 
-					rect = new Rectangle(0, nHeight / 2, nWidth, (nHeight * 5) / 8);
+					// rect = new Rectangle(0, nHeight / 2, nWidth, (nHeight * 5) / 8);
+					int hMid = nHeight / 2;
+					rect = new Rectangle(0, hMid - 1, nWidth, nHeight - hMid);
 					using(LinearGradientBrush brCarbonB = new LinearGradientBrush(
 						rect, clrStart, clrEnd, fAngle, true))
 					{
 						g.FillRectangle(brCarbonB, rect);
+					}
+
+					// Workaround gradient drawing bug (e.g. occuring on
+					// Windows 8.1 with 150% DPI)
+					using(Pen pen = new Pen(Color.Black))
+					{
+						g.DrawLine(pen, 0, hMid - 1, nWidth - 1, hMid - 1);
 					}
 				}
 				else
@@ -196,6 +199,15 @@ namespace KeePass.UI
 					}
 				}
 
+				bool bRtl = Program.Translation.Properties.RightToLeft;
+				// Matrix mxTrfOrg = g.Transform;
+				// if(bRtl)
+				// {
+				//	g.TranslateTransform(nWidth, 0.0f);
+				//	g.ScaleTransform(-1.0f, 1.0f);
+				// }
+
+				int xIcon = DpiScaleInt(10, nHeight);
 				int wIconScaled = StdIconDim;
 				int hIconScaled = StdIconDim;
 				if(imgIcon != null)
@@ -205,11 +217,12 @@ namespace KeePass.UI
 						(float)StdIconDim, nHeight));
 					hIconScaled = DpiScaleInt(StdIconDim, nHeight);
 
-					int yIcon = (nHeight - hIconScaled) / 2;
+					int xIconR = (bRtl ? (nWidth - xIcon - wIconScaled) : xIcon);
+					int yIconR = (nHeight - hIconScaled) / 2;
 					if(hIconScaled == imgIcon.Height)
-						g.DrawImageUnscaled(imgIcon, xIcon, yIcon);
+						g.DrawImageUnscaled(imgIcon, xIconR, yIconR);
 					else
-						g.DrawImage(imgIcon, xIcon, yIcon, wIconScaled, hIconScaled);
+						g.DrawImage(imgIcon, xIconR, yIconR, wIconScaled, hIconScaled);
 
 					ColorMatrix cm = new ColorMatrix();
 					cm.Matrix33 = 0.1f;
@@ -217,7 +230,8 @@ namespace KeePass.UI
 					ia.SetColorMatrix(cm);
 
 					int w = wIconScaled * 3, h = hIconScaled * 3;
-					int x = nWidth - w - xIcon, y = (nHeight - h) / 2;
+					int x = (bRtl ? xIcon : (nWidth - w - xIcon));
+					int y = (nHeight - h) / 2;
 					Rectangle rectDest = new Rectangle(x, y, w, h);
 					g.DrawImage(imgIcon, rectDest, 0, 0, imgIcon.Width, imgIcon.Height,
 						GraphicsUnit.Pixel, ia);
@@ -263,7 +277,7 @@ namespace KeePass.UI
 					}
 				}
 
-				if(bRtl) g.Transform = mxTrfOrg;
+				// if(bRtl) g.Transform = mxTrfOrg;
 
 				// Brush brush;
 				Color clrText;
@@ -289,10 +303,10 @@ namespace KeePass.UI
 				float fFontSize = DpiScaleFloat((12.0f * 96.0f) / g.DpiY, nHeight);
 				Font font = FontUtil.CreateFont(FontFamily.GenericSansSerif,
 					fFontSize, FontStyle.Bold);
-				int txs = (!bRtl ? tx : (nWidth - tx));
+				int txT = (!bRtl ? tx : (nWidth - tx));
 					// - TextRenderer.MeasureText(g, strTitle, font).Width));
 				// g.DrawString(strTitle, font, brush, fx, fy);
-				BannerFactory.DrawText(g, strTitle, txs, ty, font, clrText, bRtl);
+				BannerFactory.DrawText(g, strTitle, txT, ty, font, clrText, bRtl);
 				font.Dispose();
 
 				tx += xIcon; // fx
@@ -301,10 +315,10 @@ namespace KeePass.UI
 				float fFontSizeSm = DpiScaleFloat((9.0f * 96.0f) / g.DpiY, nHeight);
 				Font fontSmall = FontUtil.CreateFont(FontFamily.GenericSansSerif,
 					fFontSizeSm, FontStyle.Regular);
-				int txl = (!bRtl ? tx : (nWidth - tx));
+				int txL = (!bRtl ? tx : (nWidth - tx));
 					// - TextRenderer.MeasureText(g, strLine, fontSmall).Width));
 				// g.DrawString(strLine, fontSmall, brush, fx, fy);
-				BannerFactory.DrawText(g, strLine, txl, ty, fontSmall, clrText, bRtl);
+				BannerFactory.DrawText(g, strLine, txL, ty, fontSmall, clrText, bRtl);
 				fontSmall.Dispose();
 
 				g.Dispose();

@@ -20,7 +20,7 @@
 	<meta name="DC.Format" content="text/html" />
 	<meta name="DC.Identifier" content="http://keepass.info/" />
 	<meta name="DC.Language" content="en" />
-	<meta name="DC.Rights" content="Copyright (c) 2003-2014 Dominik Reichl" />
+	<meta name="DC.Rights" content="Copyright (c) 2003-2017 Dominik Reichl" />
 
 	<title>Plugins - KeePass</title>
 	<base target="_self" />
@@ -68,14 +68,16 @@ Installation and Uninstallation</h2>
 follow these steps:</p>
 
 <ol>
-<li>Download the plugin from the page above and unpack the ZIP file to a directory of your choice.</li>
-<li>Copy the unpacked plugin files into the KeePass directory (where the
-<i>KeePass.exe</i> is) or a subdirectory of it.</li>
+<li>Download the plugin from the page above and unpack the ZIP file to a
+directory of your choice.</li>
+<li>In the KeePass application directory (where the <i>KeePass.exe</i> file is),
+there is a folder called 'Plugins'.
+Move the unpacked plugin files into this folder (or any subdirectory of it).</li>
 <li>Restart KeePass in order to load the new plugin.</li>
 </ol>
 
-<p>In other words, to &quot;install&quot; a plugin you simply need to copy it somewhere
-into the KeePass directory.</p>
+<p>In short, to &quot;install&quot; a plugin you simply need to unpack it
+somewhere into the 'Plugins' folder.</p>
 
 <p>To &quot;uninstall&quot; a plugin, delete the plugin files.</p>
 
@@ -84,8 +86,7 @@ into the KeePass directory.</p>
 <h2 class="sectiontitle">
 <img src="../images/b16x16_file_locked.png" class="singleimg" alt="Locked" />&nbsp;&nbsp;Security</h2>
 
-<p><i>What about the security of plugins? Can't malicious
-spyware plugins
+<p><i>What about the security of plugins? Can't malicious plugins
 'inject' themselves into KeePass?</i></p>
 
 <p>If plugins can register themselves
@@ -93,17 +94,18 @@ spyware plugins
 replace the whole <i>KeePass.exe</i>. It's rather a problem of file access
 rights, not the plugin system.</p>
 
-<p>If you worry about this, you can do the following:</p>
+<p>If you worry about this,
+install KeePass as administrator into the program files directory
+(which is the default, typically in a folder in 'C:\Program Files (x86)').
+Afterwards, run KeePass and other applications only as normal user
+(without administrator privileges).</p>
 
-<ol>
-<li>Install KeePass as administrator.</li>
-<li>Write-protect the KeePass directory. Nobody must have write access.</li>
-<li>Log on as normal user (with no administrator privileges).</li>
-</ol>
-
-<p>This will solve the problem above. Since the KeePass directory is write-protected,
-no other program can copy files into it. KeePass requires the plugins to
+<p>This solves the problem above. As the KeePass directory is write-protected
+for normal users, no other program can copy files into it. KeePass requires the plugins to
 be in the application directory. Therefore, plugins cannot inject themselves anymore.</p>
+
+<p>If you use the portable package of KeePass or installed it into a different
+directory, you need to adjust the directory permissions yourself.</p>
 
 <br />
 
@@ -123,6 +125,11 @@ directory. However, this can be overridden using the
 So, if you're for example using KeePass on a portable device and don't want
 the cache to be on the system, you could set the path to <code>{APPDIR}\PluginCache</code>.</p>
 
-</body></html>
+<p><img src="../images/b16x16_warning.png" alt="Warning"
+style="vertical-align: middle; height: 1em;" />
+Do not relocate the plugin cache into the 'Plugins' folder of the
+KeePass application directory, because this can result in a severe
+performance degradation.</p>
 
+</body></html>
 

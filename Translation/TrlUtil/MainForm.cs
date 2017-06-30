@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.Reflection;
 
 using KeePass.App;
 using KeePass.Resources;
@@ -412,7 +412,7 @@ namespace TrlUtil
 			try
 			{
 				XmlSerializerEx xs = new XmlSerializerEx(typeof(KPTranslation));
-				kpTrl = KPTranslation.LoadFromFile(ofd.FileName, xs);
+				kpTrl = KPTranslation.Load(ofd.FileName, xs);
 			}
 			catch(Exception ex)
 			{
@@ -551,7 +551,7 @@ namespace TrlUtil
 			try
 			{
 				XmlSerializerEx xs = new XmlSerializerEx(typeof(KPTranslation));
-				KPTranslation.SaveToFile(m_trl, m_strFile, xs);
+				KPTranslation.Save(m_trl, m_strFile, xs);
 				m_bModified = false;
 			}
 			catch(Exception ex)
@@ -570,30 +570,43 @@ namespace TrlUtil
 			PwUuid pwUuid = new PwUuid(true);
 			m_trl.Properties.FileUuid = pwUuid.ToHexString();
 
-			m_trl.Properties.LastModified = DateTime.Now.ToString("u");
+			m_trl.Properties.LastModified = DateTime.UtcNow.ToString("u");
 
 			m_trl.UnusedText = m_rtbUnusedText.Text;
+			if(!string.IsNullOrEmpty(m_trl.UnusedText))
+				ShowValidationWarning(@"It is recommended to clear the 'Unused Text' tab.");
 
-			try { Validate3Dots(); }
+			try { ValidateTranslation(); }
 			catch(Exception) { Debug.Assert(false); }
 
 			try
 			{
 				string strAccel = AccelKeysCheck.Validate(m_trl);
 				if(strAccel != null)
-				{
-					MessageBox.Show(this, "Warning! The following accelerator keys collide:" +
-						MessageService.NewParagraph + strAccel + MessageService.NewParagraph +
-						"Click [OK] to continue saving.", TrlUtilName, MessageBoxButtons.OK,
-						MessageBoxIcon.Warning);
-				}
+					ShowValidationWarning("The following accelerator keys collide:" +
+						MessageService.NewParagraph + strAccel);
 			}
 			catch(Exception) { Debug.Assert(false); }
 		}
 
-		private void Validate3Dots()
+		private void ShowValidationWarning(string strText)
 		{
-			if(m_trl.Properties.RightToLeft) return; // Check doesn't support RTL
+			if(string.IsNullOrEmpty(strText)) { Debug.Assert(false); return; }
+
+			const string strContinue = @"Click [OK] to continue saving.";
+			string str = strText + MessageService.NewParagraph + strContinue;
+
+			if(!VistaTaskDialog.ShowMessageBox(str, "Validation Warning",
+				TrlUtilName, VtdIcon.Warning, this))
+				MessageBox.Show(this, "Validation Warning!" + MessageService.NewParagraph +
+					str, TrlUtilName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+		}
+
+		private void ValidateTranslation()
+		{
+			string[] vCaseSensWords = new string[] { PwDefs.ShortProductName };
+
+			bool bRtl = m_trl.Properties.RightToLeft;
 
 			foreach(KPStringTable kpst in m_trl.StringTables)
 			{
@@ -603,15 +616,31 @@ namespace TrlUtil
 					string strTrl = kpi.Value;
 					if(string.IsNullOrEmpty(strEn) || string.IsNullOrEmpty(strTrl)) continue;
 
-					bool bEllEn = (strEn.EndsWith(@"...") || strEn.EndsWith(@"…"));
-					bool bEllTrl = (strTrl.EndsWith(@"...") || strTrl.EndsWith(@"…"));
+					// Check case-sensitive words
+					foreach(string strWord in vCaseSensWords)
+					{
+						bool bWordEn = (strEn.IndexOf(strWord) >= 0);
+						if(!bWordEn)
+						{
+							Debug.Assert(strEn.IndexOf(strWord, StrUtil.CaseIgnoreCmp) < 0);
+						}
+						if(bWordEn && (strTrl.IndexOf(strWord) < 0) &&
+							(strTrl.IndexOf(strWord, StrUtil.CaseIgnoreCmp) >= 0))
+							ShowValidationWarning("The English string" +
+								MessageService.NewParagraph + strEn + MessageService.NewParagraph +
+								@"contains the case-sensitive word '" + strWord +
+								@"', but the translated string does not:" +
+								MessageService.NewParagraph + strTrl);
+					}
 
-					if(bEllEn && !bEllTrl)
-						MessageBox.Show(this, "Warning! The English string" +
+					// Check 3 dots
+					bool bEllEn = (strEn.EndsWith("...") || strEn.EndsWith(@"…"));
+					bool bEllTrl = (strTrl.EndsWith("...") || strTrl.EndsWith(@"…"));
+					if(bEllEn && !bEllTrl && !bRtl) // Check doesn't support RTL
+						ShowValidationWarning("The English string" +
 							MessageService.NewParagraph + strEn + MessageService.NewParagraph +
 							"ends with 3 dots, but the translated string does not:" +
-							MessageService.NewParagraph + strTrl, TrlUtilName,
-							MessageBoxButtons.OK, MessageBoxIcon.Warning);
+							MessageService.NewParagraph + strTrl);
 				}
 			}
 		}

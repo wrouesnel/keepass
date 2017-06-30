@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
+using KeePass.App;
+using KeePass.Resources;
 using KeePass.UI;
 using KeePass.Util;
-using KeePass.Resources;
 
 using KeePassLib.Utility;
 
@@ -44,6 +45,11 @@ namespace KeePass.Forms
 		public Encoding SelectedEncoding
 		{
 			get { return m_encSel; }
+		}
+
+		public uint DataStartOffset
+		{
+			get { return m_uStartOffset; }
 		}
 
 		public void InitEx(string strContext, byte[] pbData)
@@ -63,7 +69,10 @@ namespace KeePass.Forms
 			GlobalWindowManager.AddWindow(this);
 
 			m_bInitializing = true;
+			this.Icon = AppIcons.Default;
+
 			FontUtil.AssignDefaultBold(m_lblContext);
+			Debug.Assert(!m_lblContext.AutoSize); // For RTL support
 			m_lblContext.Text = m_strContext;
 
 			m_cmbEnc.Items.Add(KPRes.BinaryNoConv);
@@ -103,8 +112,9 @@ namespace KeePass.Forms
 				Encoding enc = GetSelEnc();
 				if(enc == null) throw new InvalidOperationException();
 
-				m_rtbPreview.Text = enc.GetString(m_pbData, (int)m_uStartOffset,
-					m_pbData.Length - (int)m_uStartOffset);
+				string str = (enc.GetString(m_pbData, (int)m_uStartOffset,
+					m_pbData.Length - (int)m_uStartOffset) ?? string.Empty);
+				m_rtbPreview.Text = StrUtil.ReplaceNulls(str);
 			}
 			catch(Exception) { m_rtbPreview.Text = string.Empty; }
 		}

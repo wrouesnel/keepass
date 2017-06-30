@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ using System.Diagnostics;
 using KeePass.Native;
 using KeePass.Util;
 
+using KeePassLib;
 using KeePassLib.Utility;
 
 using NativeLib = KeePassLib.Native.NativeLib;
@@ -49,8 +50,6 @@ namespace KeePass.UI
 
 		private static double m_dScaleX = 1.0;
 		private static double m_dScaleY = 1.0;
-
-		private static InterpolationMode m_im = InterpolationMode.HighQualityBicubic;
 
 		public static bool ScalingRequired
 		{
@@ -95,14 +94,6 @@ namespace KeePass.UI
 
 			m_dScaleX = (double)m_nDpiX / (double)StdDpi;
 			m_dScaleY = (double)m_nDpiY / (double)StdDpi;
-
-			int nDpiPct = (int)Math.Round(m_dScaleX * 100.0);
-			if((nDpiPct % 100) == 0)
-				m_im = InterpolationMode.NearestNeighbor;
-			else if(nDpiPct < 100)
-				m_im = InterpolationMode.HighQualityBilinear;
-			else
-				m_im = InterpolationMode.HighQualityBicubic;
 
 			m_bInitialized = true;
 		}
@@ -152,8 +143,20 @@ namespace KeePass.UI
 
 			try
 			{
-				if(WinUtil.IsAtLeastWindowsVista)
-					NativeMethods.SetProcessDPIAware();
+				// SetProcessDPIAware is obsolete; use
+				// SetProcessDpiAwareness on Windows 10 and higher
+				if(WinUtil.IsAtLeastWindows10) // 8.1 partially
+				{
+					if(NativeMethods.SetProcessDpiAwareness(
+						NativeMethods.ProcessDpiAwareness.SystemAware) < 0)
+					{
+						Debug.Assert(false);
+					}
+				}
+				else if(WinUtil.IsAtLeastWindowsVista)
+				{
+					if(!NativeMethods.SetProcessDPIAware()) { Debug.Assert(false); }
+				}
 			}
 			catch(Exception) { Debug.Assert(false); }
 		}
@@ -204,22 +207,7 @@ namespace KeePass.UI
 			if((w == sw) && (h == sh) && !bForceNewObject)
 				return img;
 
-			Bitmap bmp = new Bitmap(sw, sh, img.PixelFormat);
-			using(Graphics g = Graphics.FromImage(bmp))
-			{
-				g.SmoothingMode = SmoothingMode.HighQuality;
-				g.InterpolationMode = m_im;
-
-				RectangleF rSource = new RectangleF(0, 0, w, h);
-				RectangleF rDest = new RectangleF(0, 0, sw, sh);
-
-				// Prevent border drawing bug
-				rSource.Offset(-0.5f, -0.5f);
-
-				g.DrawImage(img, rDest, rSource, GraphicsUnit.Pixel);
-			}
-
-			return bmp;
+			return GfxUtil.ScaleImage(img, sw, sh, ScaleTransformFlags.UIIcon);
 		}
 
 		internal static void ScaleToolStripItems(ToolStripItem[] vItems,
@@ -257,6 +245,42 @@ namespace KeePass.UI
 				}
 				catch(Exception) { Debug.Assert(false); }
 			}
+		}
+
+		internal static Image GetIcon(PwDatabase pd, PwUuid pwUuid)
+		{
+			if(pd == null) { Debug.Assert(false); return null; }
+			if(pwUuid == null) { Debug.Assert(false); return null; }
+
+			int w = ScaleIntX(16);
+			int h = ScaleIntY(16);
+
+			return pd.GetCustomIcon(pwUuid, w, h);
+		}
+
+		[Conditional("DEBUG")]
+		internal static void AssertUIImage(Image img)
+		{
+#if DEBUG
+			if(img == null) { Debug.Assert(false); return; }
+
+			EnsureInitialized();
+
+			try
+			{
+				// Windows XP scales images based on the DPI resolution
+				// specified in the image file; thus ensure that the
+				// image file does not specify a DPI resolution;
+				// https://sourceforge.net/p/keepass/bugs/1487/
+
+				int d = (int)Math.Round(img.HorizontalResolution);
+				Debug.Assert((d == 0) || (d == m_nDpiX));
+
+				d = (int)Math.Round(img.VerticalResolution);
+				Debug.Assert((d == 0) || (d == m_nDpiY));
+			}
+			catch(Exception) { Debug.Assert(false); }
+#endif
 		}
 	}
 }

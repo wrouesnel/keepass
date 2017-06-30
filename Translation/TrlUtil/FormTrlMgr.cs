@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,9 +61,9 @@ namespace TrlUtil
 			AddForm(l, new EditAutoTypeItemForm());
 			AddForm(l, new EditStringForm());
 			AddForm(l, new EntropyForm());
-			AddForm(l, new EntryListForm());
 			AddForm(l, new EntryReportForm());
 			AddForm(l, new ExchangeDataForm());
+			AddForm(l, new FieldPickerForm());
 			AddForm(l, new FieldRefForm());
 			AddForm(l, new FileBrowserForm());
 			AddForm(l, new GroupForm());
@@ -75,6 +75,7 @@ namespace TrlUtil
 			AddForm(l, new KeyCreationForm());
 			AddForm(l, new KeyPromptForm());
 			AddForm(l, new LanguageForm());
+			AddForm(l, new ListViewForm());
 			AddForm(l, new KeePass.Forms.MainForm());
 			AddForm(l, new OptionsForm());
 			AddForm(l, new PluginsForm());
@@ -91,6 +92,7 @@ namespace TrlUtil
 			AddForm(l, new UpdateCheckForm());
 			AddForm(l, new UrlOverrideForm());
 			AddForm(l, new UrlOverridesForm());
+			AddForm(l, new WebDocForm());
 			AddForm(l, new XmlReplaceForm());
 
 			return l;

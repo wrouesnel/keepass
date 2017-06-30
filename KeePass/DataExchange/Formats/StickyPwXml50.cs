@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace KeePass.DataExchange.Formats
 {
 	// KasperskyPwMgrXml50 derives from this
 
-	// 5.0.4.232
+	// 5.0.4.232-8.0.7.78+
 	internal class StickyPwXml50 : FileFormatProvider
 	{
 		public override bool SupportsImport { get { return true; } }
@@ -145,11 +145,13 @@ namespace KeePass.DataExchange.Formats
 		{
 			DateTime dt;
 			string strTime = (xpNode.GetAttribute("CreatedDate", string.Empty));
-			if(DateTime.TryParse(strTime, out dt)) pe.CreationTime = dt;
+			if(DateTime.TryParse(strTime, out dt))
+				pe.CreationTime = TimeUtil.ToUtc(dt, true);
 			else { Debug.Assert(false); }
 
 			strTime = (xpNode.GetAttribute("ModifiedDate", string.Empty));
-			if(DateTime.TryParse(strTime, out dt)) pe.LastModificationTime = dt;
+			if(DateTime.TryParse(strTime, out dt))
+				pe.LastModificationTime = TimeUtil.ToUtc(dt, true);
 			else { Debug.Assert(false); }
 		}
 	}

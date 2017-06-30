@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ using KeePass.App;
 using KeePass.App.Configuration;
 using KeePass.Forms;
 using KeePass.Resources;
+using KeePass.Util.Spr;
 
 using KeePassLib;
 using KeePassLib.Cryptography;
@@ -68,6 +69,13 @@ namespace KeePass.UI
 			}
 		}
 
+		private bool m_bSprVar = false;
+		public bool IsSprVariant
+		{
+			get { return m_bSprVar; }
+			set { m_bSprVar = value; }
+		}
+
 		public uint PasswordLength
 		{
 			get
@@ -87,6 +95,20 @@ namespace KeePass.UI
 				if(m_cbHide == null) { Debug.Assert(false); return false; }
 				return !m_cbHide.Checked;
 			}
+		}
+
+		private PwDatabase m_ctxDatabase = null;
+		public PwDatabase ContextDatabase
+		{
+			get { return m_ctxDatabase; }
+			set { m_ctxDatabase = value; }
+		}
+
+		private PwEntry m_ctxEntry = null;
+		public PwEntry ContextEntry
+		{
+			get { return m_ctxEntry; }
+			set { m_ctxEntry = value; }
 		}
 
 		public PwInputControlGroup()
@@ -185,6 +207,12 @@ namespace KeePass.UI
 				uFlags = Program.Config.UI.KeyCreationFlags;
 
 			byte[] pbUtf8 = m_secPassword.ToUtf8();
+			string str = StrUtil.Utf8.GetString(pbUtf8);
+
+#if DEBUG
+			byte[] pbTest = StrUtil.Utf8.GetBytes(str);
+			Debug.Assert(MemUtil.ArraysEqual(pbUtf8, pbTest));
+#endif
 
 			m_tbPassword.Enabled = m_bEnabled;
 			m_cbHide.Enabled = (m_bEnabled && ((uFlags &
@@ -205,7 +233,7 @@ namespace KeePass.UI
 
 			bool bAutoRepeat = this.AutoRepeat;
 			if(bAutoRepeat && (m_secRepeat.TextLength > 0))
-				m_secRepeat.SetPassword(new byte[0]);
+				m_secRepeat.SetPassword(MemUtil.EmptyByteArray);
 
 			byte[] pbRepeat = m_secRepeat.ToUtf8();
 			if(!MemUtil.ArraysEqual(pbUtf8, pbRepeat) && !bAutoRepeat)
@@ -216,9 +244,41 @@ namespace KeePass.UI
 			m_lblRepeat.Enabled = bRepeatEnable;
 			m_tbRepeat.Enabled = bRepeatEnable;
 
-			m_lblQualityPrompt.Enabled = m_bEnabled;
-			m_pbQuality.Enabled = m_bEnabled;
-			m_lblQualityInfo.Enabled = m_bEnabled;
+			bool bQuality = m_bEnabled;
+			if(m_bSprVar && bQuality)
+			{
+				if(SprEngine.MightChange(str)) // Perf. opt.
+				{
+					// {S:...} and {REF:...} may reference the entry that
+					// is currently being edited and SprEngine will not see
+					// the current data entered in the dialog; thus we
+					// disable quality estimation for all strings containing
+					// one of these placeholders
+					if((str.IndexOf(@"{S:", StrUtil.CaseIgnoreCmp) >= 0) ||
+						(str.IndexOf(@"{REF:", StrUtil.CaseIgnoreCmp) >= 0))
+						bQuality = false;
+					else
+					{
+						SprContext ctx = new SprContext(m_ctxEntry, m_ctxDatabase,
+							SprCompileFlags.NonActive, false, false);
+						string strCmp = SprEngine.Compile(str, ctx);
+						if(strCmp != str) bQuality = false;
+					}
+				}
+#if DEBUG
+				else
+				{
+					SprContext ctx = new SprContext(m_ctxEntry, m_ctxDatabase,
+						SprCompileFlags.NonActive, false, false);
+					string strCmp = SprEngine.Compile(str, ctx);
+					Debug.Assert(strCmp == str);
+				}
+#endif
+			}
+
+			m_lblQualityPrompt.Enabled = bQuality;
+			m_pbQuality.Enabled = bQuality;
+			m_lblQualityInfo.Enabled = bQuality;
 
 			if((Program.Config.UI.UIFlags & (ulong)AceUIFlags.HidePwQuality) != 0)
 			{
@@ -226,7 +286,8 @@ namespace KeePass.UI
 				m_pbQuality.Visible = false;
 				m_lblQualityInfo.Visible = false;
 			}
-			else UpdateQualityInfo(pbUtf8);
+			else if(bQuality || !m_bSprVar) UpdateQualityInfo(str);
+			else UqiShowQuality(0, 0);
 
 			// MemUtil.ZeroByteArray(pbUtf8);
 			// MemUtil.ZeroByteArray(pbRepeat);
@@ -349,18 +410,13 @@ namespace KeePass.UI
 		}
 
 		private List<string> m_lUqiTasks = new List<string>();
-		private void UpdateQualityInfo(byte[] pbUtf8)
+		private readonly object m_oUqiTasksSync = new object();
+		private void UpdateQualityInfo(string str)
 		{
-			if(pbUtf8 == null) { Debug.Assert(false); return; }
-			string str = StrUtil.Utf8.GetString(pbUtf8);
-
-#if DEBUG
-			byte[] pbTest = StrUtil.Utf8.GetBytes(str);
-			Debug.Assert(MemUtil.ArraysEqual(pbUtf8, pbTest));
-#endif
+			if(str == null) { Debug.Assert(false); return; }
 
 			int nTasks;
-			lock(m_lUqiTasks)
+			lock(m_oUqiTasksSync)
 			{
 				if(m_lUqiTasks.Contains(str)) return;
 
@@ -397,7 +453,7 @@ namespace KeePass.UI
 				byte[] pbUtf8 = StrUtil.Utf8.GetBytes(str);
 
 				// str = StrUtil.Utf8.GetString(pbUtf8);
-				// lock(m_lUqiTasks) { m_lUqiTasks.Add(str); }
+				// lock(m_oUqiTasksSync) { m_lUqiTasks.Add(str); }
 
 				uint uBits = QualityEstimation.EstimatePasswordBits(pbUtf8);
 
@@ -417,7 +473,7 @@ namespace KeePass.UI
 			catch(Exception) { Debug.Assert(false); }
 			finally
 			{
-				lock(m_lUqiTasks) { m_lUqiTasks.Remove(str); }
+				lock(m_oUqiTasksSync) { m_lUqiTasks.Remove(str); }
 			}
 		}
 
@@ -434,21 +490,26 @@ namespace KeePass.UI
 		{
 			try
 			{
-				string strBits = uBits.ToString() + " " + KPRes.BitsStc;
-				m_pbQuality.ProgressText = strBits;
+				bool bUnknown = (m_bSprVar && !m_pbQuality.Enabled);
+
+				string strBits = (bUnknown ? "?" : uBits.ToString()) +
+					" " + KPRes.BitsStc;
+				m_pbQuality.ProgressText = (bUnknown ? string.Empty : strBits);
 
 				int iPos = (int)((100 * uBits) / (256 / 2));
 				if(iPos < 0) iPos = 0;
 				else if(iPos > 100) iPos = 100;
 				m_pbQuality.Value = iPos;
 
-				string strInfo = uLength.ToString() + " " + KPRes.CharsAbbr;
+				string strLength = (bUnknown ? "?" : uLength.ToString());
+
+				string strInfo = strLength + " " + KPRes.CharsAbbr;
 				if(Program.Config.UI.OptimizeForScreenReader)
 					strInfo = strBits + ", " + strInfo;
-				m_lblQualityInfo.Text = strInfo;
+				UIUtil.SetText(m_lblQualityInfo, strInfo);
 				if(m_ttHint != null)
 					m_ttHint.SetToolTip(m_lblQualityInfo, KPRes.PasswordLength +
-						": " + uLength.ToString() + " " + KPRes.CharsStc);
+						": " + strLength + " " + KPRes.CharsStc);
 			}
 			catch(Exception) { Debug.Assert(false); }
 		}

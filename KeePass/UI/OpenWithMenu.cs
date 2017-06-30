@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,10 +38,28 @@ using KeePassLib.Utility;
 
 namespace KeePass.UI
 {
+	internal enum OwFilePathType
+	{
+		/// <summary>
+		/// Path to an executable file that is invoked with
+		/// the target URI as command line parameter.
+		/// </summary>
+		Executable = 0,
+
+		/// <summary>
+		/// Shell path (e.g. URI) in which a placeholder is
+		/// replaced by the target URI.
+		/// </summary>
+		ShellExpand
+	}
+
 	internal sealed class OpenWithItem
 	{
 		private string m_strPath;
 		public string FilePath { get { return m_strPath; } }
+
+		private OwFilePathType m_tPath;
+		public OwFilePathType FilePathType { get { return m_tPath; } }
 
 		private string m_strMenuText;
 		// public string MenuText { get { return m_strMenuText; } }
@@ -52,10 +70,11 @@ namespace KeePass.UI
 		private ToolStripMenuItem m_tsmi;
 		public ToolStripMenuItem MenuItem { get { return m_tsmi; } }
 
-		private OpenWithItem(string strFilePath, string strMenuText,
-			Image imgIcon, DynamicMenu dynMenu)
+		public OpenWithItem(string strFilePath, OwFilePathType tPath,
+			string strMenuText, Image imgIcon, DynamicMenu dynMenu)
 		{
 			m_strPath = strFilePath;
+			m_tPath = tPath;
 			m_strMenuText = strMenuText;
 			m_imgIcon = imgIcon;
 
@@ -63,12 +82,6 @@ namespace KeePass.UI
 
 			try { m_tsmi.ToolTipText = m_strPath; }
 			catch(Exception) { } // Too long?
-		}
-
-		public static OpenWithItem Create(string strFilePath, string strMenuText,
-			Image imgIcon, DynamicMenu dynMenu)
-		{
-			return new OpenWithItem(strFilePath, strMenuText, imgIcon, dynMenu);
 		}
 	}
 
@@ -78,6 +91,8 @@ namespace KeePass.UI
 		private DynamicMenu m_dynMenu;
 
 		private List<OpenWithItem> m_lOpenWith = null;
+
+		private const string PlhTargetUri = @"{OW_URI}";
 
 		public OpenWithMenu(ToolStripDropDownItem tsmiHost)
 		{
@@ -92,7 +107,8 @@ namespace KeePass.UI
 
 		~OpenWithMenu()
 		{
-			Destroy();
+			try { Destroy(); }
+			catch(Exception) { Debug.Assert(false); }
 		}
 
 		public void Destroy()
@@ -169,6 +185,8 @@ namespace KeePass.UI
 			OpenWithItem it = (e.Tag as OpenWithItem);
 			if(it == null) { Debug.Assert(false); return; }
 
+			string strApp = it.FilePath;
+
 			PwEntry[] v = Program.MainForm.GetSelectedEntries();
 			if(v == null) { Debug.Assert(false); return; }
 
@@ -177,27 +195,34 @@ namespace KeePass.UI
 				string strUrl = pe.Strings.ReadSafe(PwDefs.UrlField);
 				if(string.IsNullOrEmpty(strUrl)) continue;
 
-				WinUtil.OpenUrlWithApp(strUrl, pe, it.FilePath);
+				if(it.FilePathType == OwFilePathType.Executable)
+					WinUtil.OpenUrlWithApp(strUrl, pe, strApp);
+				else if(it.FilePathType == OwFilePathType.ShellExpand)
+				{
+					string str = strApp.Replace(PlhTargetUri, strUrl);
+					WinUtil.OpenUrl(str, pe, false);
+				}
+				else { Debug.Assert(false); }
 			}
 		}
 
-		private void AddAppByFile(string strAppCmdLine, string strName)
+		private bool AddAppByFile(string strAppCmdLine, string strName)
 		{
-			if(string.IsNullOrEmpty(strAppCmdLine)) return; // No assert
+			if(string.IsNullOrEmpty(strAppCmdLine)) return false; // No assert
 
 			string strPath = UrlUtil.GetShortestAbsolutePath(
 				UrlUtil.GetQuotedAppPath(strAppCmdLine).Trim());
-			if(strPath.Length == 0) { Debug.Assert(false); return; }
+			if(strPath.Length == 0) { Debug.Assert(false); return false; }
 
 			foreach(OpenWithItem it in m_lOpenWith)
 			{
 				if(it.FilePath.Equals(strPath, StrUtil.CaseIgnoreCmp))
-					return; // Already have an item for this
+					return false; // Already have an item for this
 			}
 
 			// Filter non-existing/legacy applications
-			try { if(!File.Exists(strPath)) return; }
-			catch(Exception) { Debug.Assert(false); return; }
+			try { if(!File.Exists(strPath)) return false; }
+			catch(Exception) { Debug.Assert(false); return false; }
 
 			if(string.IsNullOrEmpty(strName))
 				strName = UrlUtil.StripExtension(UrlUtil.GetFileName(strPath));
@@ -206,17 +231,82 @@ namespace KeePass.UI
 				DpiUtil.ScaleIntY(16));
 
 			string strMenuText = KPRes.OpenWith.Replace(@"{PARAM}", strName);
-			OpenWithItem owi = OpenWithItem.Create(strPath, strMenuText,
-				img, m_dynMenu);
+			OpenWithItem owi = new OpenWithItem(strPath, OwFilePathType.Executable,
+				strMenuText, img, m_dynMenu);
+			m_lOpenWith.Add(owi);
+			return true;
+		}
+
+		private void AddAppByShellExpand(string strShell, string strName,
+			string strIconExe)
+		{
+			if(string.IsNullOrEmpty(strShell)) return;
+
+			if(string.IsNullOrEmpty(strName))
+				strName = strShell;
+
+			Image img = null;
+			if(!string.IsNullOrEmpty(strIconExe))
+				img = UIUtil.GetFileIcon(strIconExe, DpiUtil.ScaleIntX(16),
+					DpiUtil.ScaleIntY(16));
+
+			string strMenuText = KPRes.OpenWith.Replace(@"{PARAM}", strName);
+			OpenWithItem owi = new OpenWithItem(strShell, OwFilePathType.ShellExpand,
+				strMenuText, img, m_dynMenu);
 			m_lOpenWith.Add(owi);
 		}
 
 		private void FindAppsByKnown()
 		{
-			AddAppByFile(AppLocator.InternetExplorerPath, @"&Internet Explorer");
-			AddAppByFile(AppLocator.FirefoxPath, @"&Firefox");
-			AddAppByFile(AppLocator.OperaPath, @"O&pera");
-			AddAppByFile(AppLocator.ChromePath, @"&Google Chrome");
+			string strIE = AppLocator.InternetExplorerPath;
+			if(AddAppByFile(strIE, @"&Internet Explorer"))
+			{
+				// https://msdn.microsoft.com/en-us/library/hh826025.aspx
+				AddAppByShellExpand("cmd://\"" + strIE + "\" -private \"" +
+					PlhTargetUri + "\"", "Internet Explorer (" + KPRes.Private + ")", strIE);
+			}
+
+			if(AppLocator.EdgeProtocolSupported)
+				AddAppByShellExpand("microsoft-edge:" + PlhTargetUri, @"&Edge",
+					AppLocator.EdgePath);
+
+			string strFF = AppLocator.FirefoxPath;
+			if(AddAppByFile(strFF, @"&Firefox"))
+			{
+				// The command line options -private and -private-window work
+				// correctly with Firefox 49.0.1 (before, they did not);
+				// https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options
+				// https://bugzilla.mozilla.org/show_bug.cgi?id=856839
+				// https://bugzilla.mozilla.org/show_bug.cgi?id=829180
+				AddAppByShellExpand("cmd://\"" + strFF + "\" -private-window \"" +
+					PlhTargetUri + "\"", "Firefox (" + KPRes.Private + ")", strFF);
+			}
+
+			string strCh = AppLocator.ChromePath;
+			if(AddAppByFile(strCh, @"&Google Chrome"))
+			{
+				// https://www.chromium.org/developers/how-tos/run-chromium-with-flags
+				// http://peter.sh/examples/?/chromium-switches.html
+				AddAppByShellExpand("cmd://\"" + strCh + "\" --incognito \"" +
+					PlhTargetUri + "\"", "Google Chrome (" + KPRes.Private + ")", strCh);
+			}
+
+			string strOp = AppLocator.OperaPath;
+			if(AddAppByFile(strOp, @"O&pera"))
+			{
+				// Doesn't work with Opera 34.0.2036.25:
+				// AddAppByShellExpand("cmd://\"" + strOp + "\" -newprivatetab \"" +
+				//	PlhTargetUri + "\"", "Opera (" + KPRes.Private + ")", strOp);
+
+				// Doesn't work with Opera 36.0.2130.65:
+				// AddAppByShellExpand("cmd://\"" + strOp + "\" --incognito \"" +
+				//	PlhTargetUri + "\"", "Opera (" + KPRes.Private + ")", strOp);
+
+				// Works with Opera 40.0.2308.81:
+				AddAppByShellExpand("cmd://\"" + strOp + "\" --private \"" +
+					PlhTargetUri + "\"", "Opera (" + KPRes.Private + ")", strOp);
+			}
+
 			AddAppByFile(AppLocator.SafariPath, @"&Safari");
 
 			if(NativeLib.IsUnix())
@@ -233,15 +323,23 @@ namespace KeePass.UI
 
 		private void FindAppsByRegistry()
 		{
-			try { FindAppsByRegistryPriv("SOFTWARE\\Clients\\StartMenuInternet"); }
-			catch(Exception) { }
-			try { FindAppsByRegistryPriv("SOFTWARE\\Wow6432Node\\Clients\\StartMenuInternet"); }
-			catch(Exception) { }
+			const string strSmiDef = "SOFTWARE\\Clients\\StartMenuInternet";
+			const string strSmiWow = "SOFTWARE\\Wow6432Node\\Clients\\StartMenuInternet";
+
+			// https://msdn.microsoft.com/en-us/library/windows/desktop/dd203067.aspx
+			try { FindAppsByRegistryPriv(Registry.CurrentUser, strSmiDef); }
+			catch(Exception) { Debug.Assert(NativeLib.IsUnix()); }
+			try { FindAppsByRegistryPriv(Registry.CurrentUser, strSmiWow); }
+			catch(Exception) { Debug.Assert(NativeLib.IsUnix()); }
+			try { FindAppsByRegistryPriv(Registry.LocalMachine, strSmiDef); }
+			catch(Exception) { Debug.Assert(NativeLib.IsUnix()); }
+			try { FindAppsByRegistryPriv(Registry.LocalMachine, strSmiWow); }
+			catch(Exception) { Debug.Assert(NativeLib.IsUnix()); }
 		}
 
-		private void FindAppsByRegistryPriv(string strRootSubKey)
+		private void FindAppsByRegistryPriv(RegistryKey kBase, string strRootSubKey)
 		{
-			RegistryKey kRoot = Registry.LocalMachine.OpenSubKey(strRootSubKey, false);
+			RegistryKey kRoot = kBase.OpenSubKey(strRootSubKey, false);
 			if(kRoot == null) return; // No assert, key might not exist
 			string[] vAppSubKeys = kRoot.GetSubKeyNames();
 

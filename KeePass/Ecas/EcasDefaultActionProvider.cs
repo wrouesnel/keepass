@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ using KeePass.UI;
 using KeePass.Util;
 
 using KeePassLib;
+using KeePassLib.Collections;
+using KeePassLib.Delegates;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
@@ -43,6 +45,11 @@ namespace KeePass.Ecas
 {
 	internal sealed class EcasDefaultActionProvider : EcasActionProvider
 	{
+		private const uint IdWindowNormal = 0;
+		private const uint IdWindowHidden = 1;
+		private const uint IdWindowMin = 2;
+		private const uint IdWindowMax = 3;
+
 		private const uint IdTriggerOff = 0;
 		private const uint IdTriggerOn = 1;
 		private const uint IdTriggerToggle = 2;
@@ -62,7 +69,14 @@ namespace KeePass.Ecas
 				KPRes.ExecuteCmdLineUrl, PwIcon.Console, new EcasParameter[] {
 					new EcasParameter(KPRes.FileOrUrl, EcasValueType.String, null),
 					new EcasParameter(KPRes.Arguments, EcasValueType.String, null),
-					new EcasParameter(KPRes.WaitForExit, EcasValueType.Bool, null) },
+					new EcasParameter(KPRes.WaitForExit, EcasValueType.Bool, null),
+					new EcasParameter(KPRes.WindowStyle, EcasValueType.EnumStrings,
+						new EcasEnum(new EcasEnumItem[] {
+							new EcasEnumItem(IdWindowNormal, KPRes.Normal),
+							new EcasEnumItem(IdWindowHidden, KPRes.Hidden),
+							new EcasEnumItem(IdWindowMin, KPRes.Minimized),
+							new EcasEnumItem(IdWindowMax, KPRes.Maximized) })),
+					new EcasParameter(KPRes.Verb, EcasValueType.String, null) },
 				ExecuteShellCmd));
 
 			m_actions.Add(new EcasActionType(new PwUuid(new byte[] {
@@ -137,7 +151,9 @@ namespace KeePass.Ecas
 				0xB9, 0x34, 0xED, 0xB1, 0x3F, 0x94, 0x48, 0x22 }),
 				KPRes.ExportStc, PwIcon.Disk, new EcasParameter[] {
 					new EcasParameter(KPRes.FileOrUrl, EcasValueType.String, null),
-					new EcasParameter(KPRes.FileFormatStc, EcasValueType.String, null) },
+					new EcasParameter(KPRes.FileFormatStc, EcasValueType.String, null),
+					new EcasParameter(KPRes.Filter + " - " + KPRes.Group, EcasValueType.String, null),
+					new EcasParameter(KPRes.Filter + " - " + KPRes.Tag, EcasValueType.String, null) },
 				ExportDatabaseFile));
 
 			m_actions.Add(new EcasActionType(new PwUuid(new byte[] {
@@ -246,14 +262,45 @@ namespace KeePass.Ecas
 			string strArgs = EcasUtil.GetParamString(a.Parameters, 1, true, true);
 			bool bWait = StrUtil.StringToBool(EcasUtil.GetParamString(a.Parameters,
 				2, string.Empty));
+			uint uWindowStyle = EcasUtil.GetParamUInt(a.Parameters, 3);
+			string strVerb = EcasUtil.GetParamString(a.Parameters, 4, true);
 
 			if(string.IsNullOrEmpty(strCmd)) return;
 
 			try
 			{
-				Process p;
-				if(string.IsNullOrEmpty(strArgs)) p = Process.Start(strCmd);
-				else p = Process.Start(strCmd, strArgs);
+				ProcessStartInfo psi = new ProcessStartInfo(strCmd);
+				if(!string.IsNullOrEmpty(strArgs))
+					psi.Arguments = strArgs;
+
+				bool bShEx = true;
+				if(!string.IsNullOrEmpty(strVerb)) { } // Need ShellExecute
+				else if((uWindowStyle == IdWindowMin) ||
+					(uWindowStyle == IdWindowMax)) { } // Need ShellExecute
+				else
+				{
+					string strCmdFlt = strCmd.TrimEnd(new char[] { '\"', '\'',
+						' ', '\t', '\r', '\n' });
+					if(strCmdFlt.EndsWith(".exe", StrUtil.CaseIgnoreCmp) ||
+						strCmdFlt.EndsWith(".com", StrUtil.CaseIgnoreCmp))
+						bShEx = false;
+				}
+				psi.UseShellExecute = bShEx;
+
+				if(uWindowStyle == IdWindowHidden)
+				{
+					psi.CreateNoWindow = true;
+					psi.WindowStyle = ProcessWindowStyle.Hidden;
+				}
+				else if(uWindowStyle == IdWindowMin)
+					psi.WindowStyle = ProcessWindowStyle.Minimized;
+				else if(uWindowStyle == IdWindowMax)
+					psi.WindowStyle = ProcessWindowStyle.Maximized;
+
+				if(!string.IsNullOrEmpty(strVerb))
+					psi.Verb = strVerb;
+
+				Process p = Process.Start(psi);
 
 				if((p != null) && bWait)
 				{
@@ -438,11 +485,46 @@ namespace KeePass.Ecas
 			// if(string.IsNullOrEmpty(strPath)) return; // Allow no-file exports
 			string strFormat = EcasUtil.GetParamString(a.Parameters, 1, true);
 			if(string.IsNullOrEmpty(strFormat)) return;
+			string strGroup = EcasUtil.GetParamString(a.Parameters, 2, true);
+			string strTag = EcasUtil.GetParamString(a.Parameters, 3, true);
 
 			PwDatabase pd = Program.MainForm.ActiveDatabase;
 			if((pd == null) || !pd.IsOpen) return;
 
-			PwExportInfo pei = new PwExportInfo(pd.RootGroup, pd, true);
+			PwGroup pg = pd.RootGroup;
+			if(!string.IsNullOrEmpty(strGroup))
+			{
+				char chSep = strGroup[0];
+				PwGroup pgSub = pg.FindCreateSubTree(strGroup.Substring(1),
+					new char[] { chSep }, false);
+				pg = (pgSub ?? (new PwGroup(true, true, KPRes.Group, PwIcon.Folder)));
+			}
+
+			if(!string.IsNullOrEmpty(strTag))
+			{
+				// Do not use pg.Duplicate, because this method
+				// creates new UUIDs
+				pg = pg.CloneDeep();
+				pg.TakeOwnership(true, true, true);
+
+				GroupHandler gh = delegate(PwGroup pgSub)
+				{
+					PwObjectList<PwEntry> l = pgSub.Entries;
+					long n = (long)l.UCount;
+					for(long i = n - 1; i >= 0; --i)
+					{
+						if(!l.GetAt((uint)i).HasTag(strTag))
+							l.RemoveAt((uint)i);
+					}
+
+					return true;
+				};
+
+				gh(pg);
+				pg.TraverseTree(TraversalMethod.PreOrder, gh, null);
+			}
+
+			PwExportInfo pei = new PwExportInfo(pg, pd, true);
 			IOConnectionInfo ioc = (!string.IsNullOrEmpty(strPath) ?
 				IOConnectionInfo.FromPath(strPath) : null);
 			ExportUtil.Export(pei, strFormat, ioc);
@@ -450,7 +532,7 @@ namespace KeePass.Ecas
 
 		private static void CloseDatabaseFile(EcasAction a, EcasContext ctx)
 		{
-			Program.MainForm.CloseDocument(null, false, false, true);
+			Program.MainForm.CloseDocument(null, false, false, true, true);
 		}
 
 		private static void ActivateDatabaseTab(EcasAction a, EcasContext ctx)
@@ -577,8 +659,8 @@ namespace KeePass.Ecas
 			bool bCanCancel = false;
 			if(uBtns == (uint)MessageBoxButtons.OKCancel)
 			{
-				vtd.AddButton((int)DialogResult.OK, KPRes.OkCmd, null);
-				vtd.AddButton((int)DialogResult.Cancel, KPRes.CancelCmd, null);
+				vtd.AddButton((int)DialogResult.OK, KPRes.Ok, null);
+				vtd.AddButton((int)DialogResult.Cancel, KPRes.Cancel, null);
 				bCanCancel = true;
 			}
 			else if(uBtns == (uint)MessageBoxButtons.YesNo)
@@ -587,7 +669,7 @@ namespace KeePass.Ecas
 				vtd.AddButton((int)DialogResult.Cancel, KPRes.NoCmd, null);
 				bCanCancel = true;
 			}
-			else vtd.AddButton((int)DialogResult.OK, KPRes.OkCmd, null);
+			else vtd.AddButton((int)DialogResult.OK, KPRes.Ok, null);
 
 			uint uDef = EcasUtil.GetParamUInt(a.Parameters, 4, 0);
 			ReadOnlyCollection<VtdButton> lButtons = vtd.Buttons;

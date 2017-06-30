@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,16 +19,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
-using System.Windows.Forms;
 using System.Diagnostics;
-using System.Xml.Serialization;
 using System.Globalization;
-using System.IO;
-using System.Security.Cryptography;
-using System.Drawing;
+using System.Text;
+using System.Xml.Serialization;
 
+#if !KeePassUAP
+using System.Drawing;
+using System.Windows.Forms;
+#endif
+
+using KeePassLib.Cryptography;
 using KeePassLib.Utility;
 
 namespace KeePassLib.Translation
@@ -112,7 +114,7 @@ namespace KeePassLib.Translation
 			else { Debug.Assert(false); }
 		}
 
-#if (!KeePassLibSD && !KeePassRT)
+#if (!KeePassLibSD && !KeePassUAP)
 		internal void ApplyTo(Control c)
 		{
 			Debug.Assert(c != null); if(c == null) return;
@@ -267,7 +269,7 @@ namespace KeePassLib.Translation
 			return m_strMemberName.CompareTo(kpOther.Name);
 		}
 
-#if (!KeePassLibSD && !KeePassRT)
+#if (!KeePassLibSD && !KeePassUAP)
 		private static readonly Type[] m_vTextControls = new Type[] {
 			typeof(MenuStrip), typeof(PictureBox), typeof(ListView),
 			typeof(TreeView), typeof(ToolStrip), typeof(WebBrowser),
@@ -331,11 +333,9 @@ namespace KeePassLib.Translation
 			WriteControlDependentParams(sb, c);
 
 			byte[] pb = StrUtil.Utf8.GetBytes(sb.ToString());
+			byte[] pbSha = CryptoUtil.HashSha256(pb);
 
-			SHA256Managed sha256 = new SHA256Managed();
-			byte[] pbSha = sha256.ComputeHash(pb);
-
-			// Also see MatchHash
+			// See also MatchHash
 			return "v1:" + Convert.ToBase64String(pbSha, 0, 3,
 				Base64FormattingOptions.None);
 		}

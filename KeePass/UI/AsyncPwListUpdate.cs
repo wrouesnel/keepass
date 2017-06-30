@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -64,14 +64,14 @@ namespace KeePass.UI
 	{
 		private readonly ListView m_lv;
 
-		private object m_objListEditSync = new object();
+		private readonly object m_objListEditSync = new object();
 		public object ListEditSyncObject
 		{
 			get { return m_objListEditSync; }
 		}
 
 		private Dictionary<long, bool> m_dValidIDs = new Dictionary<long, bool>();
-		private object m_objValidIDsSync = new object();
+		private readonly object m_objValidIDsSync = new object();
 
 		private sealed class LviUpdInfo
 		{

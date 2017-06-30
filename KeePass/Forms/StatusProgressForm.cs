@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
+using KeePass.App;
 using KeePass.UI;
 using KeePass.Util;
 
@@ -94,6 +95,8 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
+			this.Icon = AppIcons.Default;
+
 			m_pbTotal.Minimum = 0;
 			m_pbTotal.Maximum = 100;
 			m_pbTotal.Value = 0;
@@ -132,6 +135,7 @@ namespace KeePass.Forms
 			Debug.Assert(!m_lblTotal.InvokeRequired);
 			Debug.Assert(!m_pbTotal.InvokeRequired);
 
+			Debug.Assert(!m_lblTotal.AutoSize); // For RTL support
 			if(strText != null) m_lblTotal.Text = strText;
 
 			if((nPercent >= 0) && (nPercent <= 100))
@@ -153,10 +157,16 @@ namespace KeePass.Forms
 		{
 			SetProgressGlobal(strOperation, -1);
 			m_bCanClose = false;
+
+			if((m_fOwner != null) && (m_fOwner is MainForm))
+				TaskbarList.SetProgressState(m_fOwner, TbpFlag.Indeterminate);
 		}
 
 		public void EndLogging()
 		{
+			if((m_fOwner != null) && (m_fOwner is MainForm))
+				TaskbarList.SetProgressState(m_fOwner, TbpFlag.NoProgress);
+
 			m_bCanClose = true;
 		}
 

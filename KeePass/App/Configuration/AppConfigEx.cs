@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
+using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Diagnostics;
@@ -29,6 +30,7 @@ using KeePass.UI;
 using KeePass.Util;
 using KeePass.Util.XmlSerialization;
 
+using KeePassLib.Native;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
 
@@ -270,6 +272,30 @@ namespace KeePass.App.Configuration
 			}
 
 			SearchUtil.FinishDeserialize(aceDef.SearchParameters);
+
+			if(NativeLib.IsUnix())
+			{
+				this.Security.MasterKeyOnSecureDesktop = false;
+
+				AceIntegration aceInt = this.Integration;
+				aceInt.HotKeyGlobalAutoType = (ulong)Keys.None;
+				aceInt.HotKeySelectedAutoType = (ulong)Keys.None;
+				aceInt.HotKeyShowWindow = (ulong)Keys.None;
+			}
+
+			if(MonoWorkarounds.IsRequired(1378))
+			{
+				AceWorkspaceLocking aceWL = this.Security.WorkspaceLocking;
+				aceWL.LockOnSessionSwitch = false;
+				aceWL.LockOnSuspend = false;
+				aceWL.LockOnRemoteControlChange = false;
+			}
+
+			if(MonoWorkarounds.IsRequired(1418))
+			{
+				aceMainWindow.MinimizeAfterOpeningDatabase = false;
+				this.Application.Start.MinimizedAndLocked = false;
+			}
 		}
 
 		internal void OnSavePre()
@@ -409,15 +435,20 @@ namespace KeePass.App.Configuration
 
 		public void Apply(AceApplyFlags f)
 		{
+			AceApplication aceApp = this.Application; // m_aceApp might be null
 			AceSecurity aceSec = this.Security; // m_sec might be null
 			AceIntegration aceInt = this.Integration; // m_int might be null
 
 			if((f & AceApplyFlags.Proxy) != AceApplyFlags.None)
 				IOConnection.SetProxy(aceInt.ProxyType, aceInt.ProxyAddress,
-					aceInt.ProxyPort, aceInt.ProxyUserName, aceInt.ProxyPassword);
+					aceInt.ProxyPort, aceInt.ProxyAuthType, aceInt.ProxyUserName,
+					aceInt.ProxyPassword);
 
 			if((f & AceApplyFlags.Ssl) != AceApplyFlags.None)
 				IOConnection.SslCertsAcceptInvalid = aceSec.SslCertsAcceptInvalid;
+
+			if((f & AceApplyFlags.FileTransactions) != AceApplyFlags.None)
+				FileTransactionEx.ExtraSafe = aceApp.FileTxExtra;
 		}
 	}
 
@@ -427,6 +458,7 @@ namespace KeePass.App.Configuration
 		None = 0,
 		Proxy = 0x1,
 		Ssl = 0x2,
+		FileTransactions = 0x4,
 
 		All = 0x7FFF
 	}

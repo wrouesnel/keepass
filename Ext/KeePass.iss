@@ -8,17 +8,17 @@
 #define MyAppNameEx "KeePass Password Safe 2"
 #define MyAppPublisher "Dominik Reichl"
 
-#define KeeVersionStr "2.28"
-#define KeeVersionStrWithMinor "2.28"
-#define KeeVersionStrWithMinorPath "2.28"
-#define KeeVersionWin "2.28.0.0"
-#define KeeVersionWinShort "2.28"
+#define KeeVersionStr "2.36"
+#define KeeVersionStrWithMinor "2.36"
+#define KeeVersionStrWithMinorPath "2.36"
+#define KeeVersionWin "2.36.0.0"
+#define KeeVersionWinShort "2.36"
 
 #define MyAppURL "http://keepass.info/"
 #define MyAppExeName "KeePass.exe"
 #define MyAppUrlName "KeePass.url"
 #define MyAppHelpName "KeePass.chm"
-#define KeeDevPeriod "2003-2014"
+#define KeeDevPeriod "2003-2017"
 #define MyAppId "KeePassPasswordSafe2"
 
 [Setup]
@@ -43,6 +43,7 @@ SolidCompression=yes
 InternalCompressLevel=ultra
 UninstallDisplayIcon={app}\{#MyAppExeName}
 AppMutex=KeePassAppMutex,Global\KeePassAppMutexEx
+SetupMutex=KeePassSetupMutex2
 VersionInfoVersion={#KeeVersionWin}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} {#KeeVersionStr} Setup
@@ -89,6 +90,9 @@ Name: NGen; Description: Optimize KeePass Performance; Types: full custom; Extra
 Name: PreLoad; Description: Optimize KeePass On-Demand Start-Up Performance; Types: full custom; ExtraDiskSpaceRequired: 2048
 ; Name: FileAssoc; Description: {cm:AssocFileExtension,{#MyAppNameShort},.kdbx}; Types: full custom
 
+[Dirs]
+Name: "{app}\Plugins"; Flags: uninsalwaysuninstall
+
 [Files]
 Source: ..\Build\KeePass_Distrib\KeePass.exe; DestDir: {app}; Flags: ignoreversion; Components: Core
 Source: ..\Build\KeePass_Distrib\KeePass.XmlSerializers.dll; DestDir: {app}; Flags: ignoreversion; Components: Core
@@ -101,12 +105,11 @@ Source: ..\Build\KeePass_Distrib\KeePassLibC32.dll; DestDir: {app}; Flags: ignor
 Source: ..\Build\KeePass_Distrib\KeePassLibC64.dll; DestDir: {app}; Flags: ignoreversion; Components: KeePassLibC
 ; Source: ..\Build\KeePass_Distrib\KeePassNtv32.dll; DestDir: {app}; Flags: ignoreversion; Components: NativeLib
 ; Source: ..\Build\KeePass_Distrib\KeePassNtv64.dll; DestDir: {app}; Flags: ignoreversion; Components: NativeLib
-Source: ..\Build\KeePass_Distrib\XSL\KDBX_DetailsFull.xsl; DestDir: {app}\XSL; Components: XSL
-Source: ..\Build\KeePass_Distrib\XSL\KDBX_DetailsLite.xsl; DestDir: {app}\XSL; Components: XSL
-Source: ..\Build\KeePass_Distrib\XSL\KDBX_PasswordsOnly.xsl; DestDir: {app}\XSL; Components: XSL
-Source: ..\Build\KeePass_Distrib\XSL\KDBX_Styles.css; DestDir: {app}\XSL; Components: XSL
-Source: ..\Build\KeePass_Distrib\XSL\KDBX_Tabular.xsl; DestDir: {app}\XSL; Components: XSL
-Source: ..\Build\KeePass_Distrib\XSL\TableHeader.gif; DestDir: {app}\XSL; Components: XSL
+Source: ..\Build\KeePass_Distrib\XSL\KDBX_Common.xsl; DestDir: {app}\XSL; Components: XSL
+Source: ..\Build\KeePass_Distrib\XSL\KDBX_DetailsFull_HTML.xsl; DestDir: {app}\XSL; Components: XSL
+Source: ..\Build\KeePass_Distrib\XSL\KDBX_DetailsLight_HTML.xsl; DestDir: {app}\XSL; Components: XSL
+Source: ..\Build\KeePass_Distrib\XSL\KDBX_PasswordsOnly_TXT.xsl; DestDir: {app}\XSL; Components: XSL
+Source: ..\Build\KeePass_Distrib\XSL\KDBX_Tabular_HTML.xsl; DestDir: {app}\XSL; Components: XSL
 
 [Registry]
 ; Always unregister .kdbx association at uninstall
@@ -114,7 +117,7 @@ Root: HKCR; Subkey: .kdbx; Flags: uninsdeletekey; Tasks: not FileAssoc
 Root: HKCR; Subkey: kdbxfile; Flags: uninsdeletekey; Tasks: not FileAssoc
 ; Register .kdbx association at install, and unregister at uninstall
 Root: HKCR; Subkey: .kdbx; ValueType: string; ValueData: kdbxfile; Flags: uninsdeletekey; Tasks: FileAssoc
-Root: HKCR; Subkey: kdbxfile; ValueType: string; ValueData: KeePass Password Database; Flags: uninsdeletekey; Tasks: FileAssoc
+Root: HKCR; Subkey: kdbxfile; ValueType: string; ValueData: KeePass Database; Flags: uninsdeletekey; Tasks: FileAssoc
 Root: HKCR; Subkey: kdbxfile; ValueType: string; ValueName: AlwaysShowExt; Flags: uninsdeletekey; Tasks: FileAssoc
 Root: HKCR; Subkey: kdbxfile\DefaultIcon; ValueType: string; ValueData: """{app}\{#MyAppExeName}"",0"; Flags: uninsdeletekey; Tasks: FileAssoc
 Root: HKCR; Subkey: kdbxfile\shell\open; ValueType: string; ValueData: &Open with {#MyAppName}; Flags: uninsdeletekey; Tasks: FileAssoc
@@ -147,6 +150,12 @@ Filename: {app}\ShInstUtil.exe; Parameters: ngen_uninstall; WorkingDir: {app}; F
 ; Delete old files when upgrading
 [InstallDelete]
 Name: {app}\{#MyAppUrlName}; Type: files
+Name: {app}\XSL\KDBX_DetailsFull.xsl; Type: files
+Name: {app}\XSL\KDBX_DetailsLite.xsl; Type: files
+Name: {app}\XSL\KDBX_PasswordsOnly.xsl; Type: files
+Name: {app}\XSL\KDBX_Styles.css; Type: files
+Name: {app}\XSL\KDBX_Tabular.xsl; Type: files
+Name: {app}\XSL\TableHeader.gif; Type: files
 Name: {group}\{#MyAppName}.lnk; Type: files
 Name: {group}\{cm:ProgramOnTheWeb,{#MyAppName}}.lnk; Type: files
 Name: {group}\Help.lnk; Type: files

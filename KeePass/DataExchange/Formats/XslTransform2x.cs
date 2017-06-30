@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ namespace KeePass.DataExchange.Formats
 {
 	internal sealed class XslTransform2x : FileFormatProvider
 	{
+		private const string ParamXslFile = "XslFile";
+
 		public override bool SupportsImport { get { return false; } }
 		public override bool SupportsExport { get { return true; } }
 
@@ -54,15 +56,35 @@ namespace KeePass.DataExchange.Formats
 		public override bool Export(PwExportInfo pwExportInfo, Stream sOutput,
 			IStatusLogger slLogger)
 		{
+			string strXslFile;
+			pwExportInfo.Parameters.TryGetValue(ParamXslFile, out strXslFile);
+
+			if(string.IsNullOrEmpty(strXslFile))
+			{
+				strXslFile = UIGetXslFile();
+
+				if(string.IsNullOrEmpty(strXslFile))
+					return false;
+			}
+
+			return ExportEx(pwExportInfo, sOutput, slLogger, strXslFile);
+		}
+
+		private static string UIGetXslFile()
+		{
 			string strFilter = UIUtil.CreateFileTypeFilter("xsl", KPRes.XslFileType, true);
 			OpenFileDialogEx dlgXsl = UIUtil.CreateOpenFileDialog(KPRes.XslSelectFile,
 				strFilter, 1, "xsl", false, AppDefs.FileDialogContext.Xsl);
 
-			if(dlgXsl.ShowDialog() != DialogResult.OK) return false;
+			if(dlgXsl.ShowDialog() != DialogResult.OK) return null;
 
-			string strXslFile = dlgXsl.FileName;
+			return dlgXsl.FileName;
+		}
+
+		private bool ExportEx(PwExportInfo pwExportInfo, Stream sOutput,
+			IStatusLogger slLogger, string strXslFile)
+		{
 			XslCompiledTransform xsl = new XslCompiledTransform();
-
 			try { xsl.Load(strXslFile); }
 			catch(Exception exXsl)
 			{
@@ -70,32 +92,44 @@ namespace KeePass.DataExchange.Formats
 					KPRes.NoXslFile + MessageService.NewParagraph + exXsl.Message);
 			}
 
-			MemoryStream msDataXml = new MemoryStream();
+			byte[] pbData;
+			using(MemoryStream ms = new MemoryStream())
+			{
+				PwDatabase pd = (pwExportInfo.ContextDatabase ?? new PwDatabase());
+				KdbxFile f = new KdbxFile(pd);
+				f.Save(ms, pwExportInfo.DataGroup, KdbxFormat.PlainXml, slLogger);
 
-			PwDatabase pd = (pwExportInfo.ContextDatabase ?? new PwDatabase());
-			KdbxFile kdb = new KdbxFile(pd);
-			kdb.Save(msDataXml, pwExportInfo.DataGroup, KdbxFormat.PlainXml, slLogger);
+				pbData = ms.ToArray();
+			}
+			if(pbData == null) throw new OutOfMemoryException();
 
-			byte[] pbData = msDataXml.ToArray();
-			msDataXml.Close();
-			MemoryStream msDataRead = new MemoryStream(pbData, false);
-			XmlReader xmlDataReader = XmlReader.Create(msDataRead);
+			XmlWriterSettings xws = xsl.OutputSettings;
+			if(xws == null)
+			{
+				xws = new XmlWriterSettings();
 
-			XmlWriterSettings xws = new XmlWriterSettings();
-			xws.CheckCharacters = false;
-			xws.Encoding = new UTF8Encoding(false);
-			xws.NewLineChars = MessageService.NewLine;
-			xws.NewLineHandling = NewLineHandling.None;
-			xws.OmitXmlDeclaration = true;
-			xws.ConformanceLevel = ConformanceLevel.Auto;
+				xws.CheckCharacters = false;
+				xws.ConformanceLevel = ConformanceLevel.Auto;
+				xws.Encoding = StrUtil.Utf8;
+				// xws.Indent = false;
+				xws.IndentChars = "\t";
+				xws.NewLineChars = MessageService.NewLine;
+				xws.NewLineHandling = NewLineHandling.None;
+				xws.OmitXmlDeclaration = true;
+			}
 
-			XmlWriter xmlWriter = XmlWriter.Create(sOutput, xws);
-			xsl.Transform(xmlDataReader, xmlWriter);
-			xmlWriter.Close();
-			xmlDataReader.Close();
-			msDataRead.Close();
+			using(MemoryStream msIn = new MemoryStream(pbData, false))
+			{
+				using(XmlReader xrIn = XmlReader.Create(msIn))
+				{
+					using(XmlWriter xwOut = XmlWriter.Create(sOutput, xws))
+					{
+						xsl.Transform(xrIn, xwOut);
+					}
+				}
+			}
 
-			Array.Clear(pbData, 0, pbData.Length);
+			MemUtil.ZeroByteArray(pbData);
 			return true;
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -360,7 +360,7 @@ namespace KeePass.Plugins
 				strRootDir + "Sentinel.txt", strSourceFile), '/');
 			WriteObject(bwFile, PlgxfPath, StrUtil.Utf8.GetBytes(strRel));
 
-			byte[] pbData = (File.ReadAllBytes(strSourceFile) ?? new byte[0]);
+			byte[] pbData = (File.ReadAllBytes(strSourceFile) ?? MemUtil.EmptyByteArray);
 			if(pbData.LongLength >= (long)(int.MaxValue / 2)) // Max 1 GB
 				throw new OutOfMemoryException();
 
@@ -413,7 +413,7 @@ namespace KeePass.Plugins
 			WriteObject(bw, PlgxBaseFileName, StrUtil.Utf8.GetBytes(
 				plgx.BaseFileName));
 			WriteObject(bw, PlgxCreationTime, StrUtil.Utf8.GetBytes(
-				TimeUtil.SerializeUtc(DateTime.Now)));
+				TimeUtil.SerializeUtc(DateTime.UtcNow)));
 			WriteObject(bw, PlgxGeneratorName, StrUtil.Utf8.GetBytes(
 				PwDefs.ShortProductName));
 			WriteObject(bw, PlgxGeneratorVersion, MemUtil.UInt64ToBytes(
@@ -556,21 +556,24 @@ namespace KeePass.Plugins
 			}
 
 			CompilerResults cr = null;
+			StringBuilder sbCompilerLog = new StringBuilder();
 			bool bCompiled = false;
 			for(int iCmp = 0; iCmp < vCompilers.Length; ++iCmp)
 			{
-				if(CompileAssembly(plgx, ref cr, vCompilers[iCmp]))
+				if(CompileAssembly(plgx, out cr, vCompilers[iCmp]))
 				{
 					bCompiled = true;
 					break;
 				}
+
+				if(cr != null)
+					AppendCompilerResults(sbCompilerLog, vCompilers[iCmp], cr);
 			}
 
 			if(!bCompiled)
 			{
-				if(Program.CommandLineArgs[
-					AppDefs.CommandLineOptions.SavePluginCompileRes] != null)
-					SaveCompilerResults(plgx, cr);
+				if(Program.CommandLineArgs[AppDefs.CommandLineOptions.Debug] != null)
+					SaveCompilerResults(plgx, sbCompilerLog);
 
 				throw new InvalidOperationException();
 			}
@@ -587,8 +590,10 @@ namespace KeePass.Plugins
 		}
 
 		private static bool CompileAssembly(PlgxPluginInfo plgx,
-			ref CompilerResults cr, string strCompilerVersion)
+			out CompilerResults cr, string strCompilerVersion)
 		{
+			cr = null;
+
 			const string StrCoreRef = "System.Core";
 			const string StrCoreDll = "System.Core.dll";
 			bool bHasCore = false, bCoreAdded = false;
@@ -641,23 +646,39 @@ namespace KeePass.Plugins
 			if(bCoreAdded)
 				plgx.CompilerParameters.ReferencedAssemblies.Remove(StrCoreDll);
 
-			// cr = null; // Keep previous results for output
 			return bResult;
 		}
 
-		private static void SaveCompilerResults(PlgxPluginInfo plgx,
+		private static void AppendCompilerResults(StringBuilder sb, string strCompiler,
 			CompilerResults cr)
 		{
-			if(cr == null) { Debug.Assert(false); return; }
+			if((sb == null) || (cr == null)) { Debug.Assert(false); return; }
+			// strCompiler may be null
 
-			StringBuilder sb = new StringBuilder();
-			foreach(string strOut in cr.Output)
+			if(sb.Length > 0)
 			{
-				sb.AppendLine(strOut);
+				sb.AppendLine();
+				sb.AppendLine();
+				sb.AppendLine();
 			}
 
+			sb.AppendLine(new string('=', 78));
+			sb.AppendLine(@"Compiler '" + (strCompiler ?? "null") + @"':");
+			sb.AppendLine();
+
+			foreach(string str in cr.Output)
+			{
+				if(str == null) { Debug.Assert(false); continue; }
+
+				sb.AppendLine(str.Trim());
+			}
+		}
+
+		private static void SaveCompilerResults(PlgxPluginInfo plgx,
+			StringBuilder sb)
+		{
 			string strFile = Path.GetTempFileName();
-			File.WriteAllText(strFile, sb.ToString(), new UTF8Encoding(false));
+			File.WriteAllText(strFile, sb.ToString(), StrUtil.Utf8);
 
 			MessageService.ShowWarning(plgx.BaseFileName,
 				"Compilation failed. Compiler results have been saved to:" +

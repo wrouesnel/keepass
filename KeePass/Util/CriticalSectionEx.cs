@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using System.Diagnostics;
 
 namespace KeePass.Util
 {
@@ -35,7 +35,7 @@ namespace KeePass.Util
 	{
 		private int m_iLock = 0;
 
-#if DEBUG
+#if (DEBUG && !KeePassUAP)
 		private int m_iThreadId = -1;
 #endif
 
@@ -53,7 +53,7 @@ namespace KeePass.Util
 		{
 			bool b = (Interlocked.Exchange(ref m_iLock, 1) == 0);
 
-#if DEBUG
+#if (DEBUG && !KeePassUAP)
 			if(b) m_iThreadId = Thread.CurrentThread.ManagedThreadId;
 #endif
 
@@ -66,7 +66,7 @@ namespace KeePass.Util
 			{
 				Debug.Assert(false);
 			}
-#if DEBUG
+#if (DEBUG && !KeePassUAP)
 			else
 			{
 				// Lock should be released by the original thread

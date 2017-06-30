@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <Translation>
 	<StringTable Name="KPRes" Namespace="KeePass.Resources">
+		<Data Name="Abort">
+			<Value>Abort</Value>
+		</Data>
 		<Data Name="AbortTrigger">
 			<Value>Abort current trigger execution</Value>
 		</Data>
@@ -157,6 +160,12 @@
 		<Data Name="AutoType">
 			<Value>Auto-Type</Value>
 		</Data>
+		<Data Name="AutoTypeAbortedOnWindow">
+			<Value>Auto-Type has been aborted, because the target window is disallowed by the application policy (defined by your administrator).</Value>
+		</Data>
+		<Data Name="AutoTypeAlwaysShowSelDialog">
+			<Value>Always show global auto-type entry selection dialog</Value>
+		</Data>
 		<Data Name="AutoTypeCancelOnTitleChange">
 			<Value>Cancel auto-type when the target window title changes</Value>
 		</Data>
@@ -166,8 +175,8 @@
 		<Data Name="AutoTypeEntrySelection">
 			<Value>Auto-Type Entry Selection</Value>
 		</Data>
-		<Data Name="AutoTypeEntrySelectionDescLong">
-			<Value>Multiple entries have been found for the currently active window. Please select the entry, which you want to auto-type into the active window.</Value>
+		<Data Name="AutoTypeEntrySelectionDescLong2">
+			<Value>The following entries have been found for the currently active target window. Please select the entry that you want to auto-type into the target window.</Value>
 		</Data>
 		<Data Name="AutoTypeEntrySelectionDescShort">
 			<Value>Multiple entries exist for the current window.</Value>
@@ -188,7 +197,7 @@
 			<Value>An entry matches if its URL is contained in the target window title</Value>
 		</Data>
 		<Data Name="AutoTypeObfuscationHint">
-			<Value>Auto-type obfuscation may not work with all windows.</Value>
+			<Value>Auto-Type obfuscation may not work with all windows.</Value>
 		</Data>
 		<Data Name="AutoTypePrependInitSeqForIE">
 			<Value>Prepend special initialization sequence for Internet Explorer windows</Value>
@@ -259,9 +268,6 @@
 		<Data Name="Cancel">
 			<Value>Cancel</Value>
 		</Data>
-		<Data Name="CancelCmd">
-			<Value>&amp;Cancel</Value>
-		</Data>
 		<Data Name="CannotMoveEntriesBcsGroup">
 			<Value>Cannot move entries because they aren't stored in the same group.</Value>
 		</Data>
@@ -282,6 +288,9 @@
 		</Data>
 		<Data Name="CheckingForUpd">
 			<Value>Checking for updates</Value>
+		</Data>
+		<Data Name="ClassicAdj">
+			<Value>Classic</Value>
 		</Data>
 		<Data Name="ClearKeyCmdLineParams">
 			<Value>Clear master key command line parameters after using them once</Value>
@@ -415,6 +424,9 @@
 		<Data Name="CopyWholeEntries">
 			<Value>Copy Whole Entries</Value>
 		</Data>
+		<Data Name="CorruptionByExt">
+			<Value>Such a corruption is usually caused by a plugin or a KeePass port. Please try to find out which plugin/port is causing it and report the issue to the corresponding developer.</Value>
+		</Data>
 		<Data Name="Count">
 			<Value>Count</Value>
 		</Data>
@@ -439,11 +451,20 @@
 		<Data Name="CredSaveUserOnly">
 			<Value>Remember user name only</Value>
 		</Data>
+		<Data Name="CredSpecifyDifferent">
+			<Value>&amp;Specify different server credentials</Value>
+		</Data>
 		<Data Name="CsprojCountError">
 			<Value>There must be exactly one .csproj or .vbproj file.</Value>
 		</Data>
 		<Data Name="CsvTextFile">
 			<Value>CSV / Text File</Value>
+		</Data>
+		<Data Name="CtrlAltAConflict">
+			<Value>KeePass' global auto-type hot key Ctrl+Alt+A is in conflict with a system key combination that is producing '{PARAM}'.</Value>
+		</Data>
+		<Data Name="CtrlAltAConflictHint">
+			<Value>You can change the global auto-type hot key to a different key combination in 'Tools' -&gt; 'Options' -&gt; tab 'Integration'.</Value>
 		</Data>
 		<Data Name="CurrentStyle">
 			<Value>Current Style</Value>
@@ -577,6 +598,18 @@
 		<Data Name="DropToBackOnCopy">
 			<Value>Drop to background after copying data to the clipboard</Value>
 		</Data>
+		<Data Name="DuplicatePasswords">
+			<Value>Duplicate Passwords</Value>
+		</Data>
+		<Data Name="DuplicatePasswordsGroup">
+			<Value>Entries using the same password:</Value>
+		</Data>
+		<Data Name="DuplicatePasswordsList">
+			<Value>List of entries that are using the same passwords.</Value>
+		</Data>
+		<Data Name="DuplicatePasswordsNone">
+			<Value>No duplicate passwords have been found.</Value>
+		</Data>
 		<Data Name="DuplicateStringFieldName">
 			<Value>The string field name you specified already exists. String field names must be unique for each entry.</Value>
 		</Data>
@@ -655,6 +688,9 @@
 		<Data Name="EntryListAutoResizeColumns">
 			<Value>Automatically resize entry list columns when resizing the main window</Value>
 		</Data>
+		<Data Name="EntrySelGroupSel">
+			<Value>When selecting an entry, automatically select its parent group, too</Value>
+		</Data>
 		<Data Name="EnvironmentVariable">
 			<Value>Environment variable</Value>
 		</Data>
@@ -670,6 +706,9 @@
 		<Data Name="Errors">
 			<Value>Errors</Value>
 		</Data>
+		<Data Name="EscMinimizesToTray">
+			<Value>Esc minimizes to tray instead of locking the workspace</Value>
+		</Data>
 		<Data Name="Event">
 			<Value>Event</Value>
 		</Data>
@@ -684,6 +723,9 @@
 		</Data>
 		<Data Name="ExpiredEntries">
 			<Value>Expired Entries</Value>
+		</Data>
+		<Data Name="ExpiredEntriesCanMatch">
+			<Value>Expired entries can match</Value>
 		</Data>
 		<Data Name="ExpiryTime">
 			<Value>Expiry Time</Value>
@@ -714,6 +756,9 @@
 		</Data>
 		<Data Name="ExportToPrompt">
 			<Value>Export to:</Value>
+		</Data>
+		<Data Name="External">
+			<Value>External</Value>
 		</Data>
 		<Data Name="ExternalApp">
 			<Value>External Application</Value>
@@ -838,6 +883,9 @@
 		<Data Name="FileSaveQOpYesLocking">
 			<Value>Save all changes made to the database and lock the KeePass workspace.</Value>
 		</Data>
+		<Data Name="FileTxExtra">
+			<Value>Extra-safe file transactions</Value>
+		</Data>
 		<Data Name="FileVerifyHashFail">
 			<Value>The new file's content does not match the data that KeePass has written, i.e. writing to the file has failed and it might be corrupted now.</Value>
 		</Data>
@@ -864,6 +912,9 @@
 		</Data>
 		<Data Name="Font">
 			<Value>Font</Value>
+		</Data>
+		<Data Name="FontDefault">
+			<Value>Default &amp;Font</Value>
 		</Data>
 		<Data Name="ForceSystemFontUnix">
 			<Value>Force using system font (Unix only)</Value>
@@ -925,8 +976,17 @@
 		<Data Name="GenProfileSaveDescLong">
 			<Value>Please enter a name for the new password generator profile, or select an existing profile name to overwrite it:</Value>
 		</Data>
+		<Data Name="GenPwAccept">
+			<Value>Accept this password?</Value>
+		</Data>
 		<Data Name="GenPwBasedOnPrevious">
 			<Value>Derive from previous password</Value>
+		</Data>
+		<Data Name="GenPwSprVariant">
+			<Value>The generated password contains a placeholder. When using this password (e.g. by copying it to the clipboard or auto-typing it), the placeholder will be replaced, i.e. effectively a different password might be used.</Value>
+		</Data>
+		<Data Name="Gradient">
+			<Value>Gradient</Value>
 		</Data>
 		<Data Name="Group">
 			<Value>Group</Value>
@@ -949,11 +1009,17 @@
 		<Data Name="HelpSourceSelectionDesc">
 			<Value>Choose between local help and online help center.</Value>
 		</Data>
-		<Data Name="HexKey">
-			<Value>{PARAM}-Bit Hex Key</Value>
+		<Data Name="HexKeyEx">
+			<Value>Hex Key - {PARAM}-Bit</Value>
 		</Data>
 		<Data Name="HexViewer">
 			<Value>Hex Viewer</Value>
+		</Data>
+		<Data Name="Hidden">
+			<Value>Hidden</Value>
+		</Data>
+		<Data Name="HideCloseDatabaseTb">
+			<Value>Hide 'Close Database' toolbar button when at most one database is opened</Value>
 		</Data>
 		<Data Name="HideUsingAsterisks">
 			<Value>Hide field using asterisks</Value>
@@ -1027,6 +1093,9 @@
 		<Data Name="ImportStc">
 			<Value>Import into active database</Value>
 		</Data>
+		<Data Name="IncompatibleEnv">
+			<Value>incompatible with current environment</Value>
+		</Data>
 		<Data Name="IncompatibleWithSorting">
 			<Value>incompatible with sorting</Value>
 		</Data>
@@ -1066,6 +1135,9 @@
 		<Data Name="Italic">
 			<Value>Italic</Value>
 		</Data>
+		<Data Name="Iterations">
+			<Value>Iterations</Value>
+		</Data>
 		<Data Name="KdbKeePassLibC">
 			<Value>The KeePassLibC library is required to open and save KDB files created by KeePass 1.x.</Value>
 		</Data>
@@ -1074,6 +1146,12 @@
 		</Data>
 		<Data Name="KdbxFiles">
 			<Value>KeePass KDBX Files</Value>
+		</Data>
+		<Data Name="KdfAdjust">
+			<Value>The value of a key derivation function parameter lies outside the range of valid values. KeePass adjusts the value to the nearest valid value.</Value>
+		</Data>
+		<Data Name="KdfParams1Sec">
+			<Value>Compute parameters that lead to a delay of 1 second on this computer.</Value>
 		</Data>
 		<Data Name="KeePassLibCLong">
 			<Value>KeePassLibC (1.x File Support)</Value>
@@ -1150,6 +1228,9 @@
 		<Data Name="LastModificationTime">
 			<Value>Last Modification Time</Value>
 		</Data>
+		<Data Name="LastModTimePwHist">
+			<Value>Last Password Modification Time (Based on History)</Value>
+		</Data>
 		<Data Name="LimitSingleInstance">
 			<Value>Limit to single instance</Value>
 		</Data>
@@ -1162,8 +1243,11 @@
 		<Data Name="LockMenuUnlock">
 			<Value>Un&amp;lock Workspace</Value>
 		</Data>
-		<Data Name="LockOnMinimize">
-			<Value>Lock workspace when minimizing main window</Value>
+		<Data Name="LockOnMinimizeTaskbar">
+			<Value>Lock workspace when minimizing main window to taskbar</Value>
+		</Data>
+		<Data Name="LockOnMinimizeTray">
+			<Value>Lock workspace when minimizing main window to tray</Value>
 		</Data>
 		<Data Name="LockOnRemoteControlChange">
 			<Value>Lock workspace when the remote control mode changes</Value>
@@ -1181,7 +1265,7 @@
 			<Value>Main Window</Value>
 		</Data>
 		<Data Name="MasterKeyChanged">
-			<Value>Composite master key has been changed!</Value>
+			<Value>The master key has been changed!</Value>
 		</Data>
 		<Data Name="MasterKeyChangedSavePrompt">
 			<Value>Save the database now in order to get the new key applied.</Value>
@@ -1207,6 +1291,12 @@
 		<Data Name="MasterPasswordMinQualityFailed">
 			<Value>The estimated quality of the master password must be at least {PARAM} bits!</Value>
 		</Data>
+		<Data Name="Maximized">
+			<Value>Maximized</Value>
+		</Data>
+		<Data Name="Memory">
+			<Value>Memory</Value>
+		</Data>
 		<Data Name="Menus">
 			<Value>Menus</Value>
 		</Data>
@@ -1221,6 +1311,9 @@
 		</Data>
 		<Data Name="MinimizeAfterOpeningDatabase">
 			<Value>Minimize main window after opening a database</Value>
+		</Data>
+		<Data Name="Minimized">
+			<Value>Minimized</Value>
 		</Data>
 		<Data Name="MinimizeToTray">
 			<Value>Minimize to tray instead of taskbar</Value>
@@ -1276,6 +1369,9 @@
 		<Data Name="NoCmd">
 			<Value>&amp;No</Value>
 		</Data>
+		<Data Name="NoEncNoCompress">
+			<Value>Make sure that it is not encrypted and not compressed.</Value>
+		</Data>
 		<Data Name="NoFileAccessRead">
 			<Value>The operating system didn't grant KeePass read access to the specified file.</Value>
 		</Data>
@@ -1287,6 +1383,9 @@
 		</Data>
 		<Data Name="None">
 			<Value>None</Value>
+		</Data>
+		<Data Name="Normal">
+			<Value>Normal</Value>
 		</Data>
 		<Data Name="NoSort">
 			<Value>&amp;No Sort</Value>
@@ -1321,8 +1420,8 @@
 		<Data Name="Ok">
 			<Value>OK</Value>
 		</Data>
-		<Data Name="OkCmd">
-			<Value>&amp;OK</Value>
+		<Data Name="OldFormat">
+			<Value>Old Format</Value>
 		</Data>
 		<Data Name="On">
 			<Value>On</Value>
@@ -1393,6 +1492,9 @@
 		<Data Name="PackageInstallHint">
 			<Value>Install this package and try again.</Value>
 		</Data>
+		<Data Name="Parallelism">
+			<Value>Parallelism</Value>
+		</Data>
 		<Data Name="ParamDescHelp">
 			<Value>Detailed descriptions of all parameters can be found in the help manual.</Value>
 		</Data>
@@ -1417,6 +1519,12 @@
 		<Data Name="PasswordPrompt">
 			<Value>Enter the password:</Value>
 		</Data>
+		<Data Name="PasswordQuality">
+			<Value>Password Quality</Value>
+		</Data>
+		<Data Name="PasswordQualityReport">
+			<Value>Estimated quality of the entry passwords.</Value>
+		</Data>
 		<Data Name="PasswordRepeatFailed">
 			<Value>Password and repeated password aren't identical!</Value>
 		</Data>
@@ -1440,6 +1548,12 @@
 		</Data>
 		<Data Name="PickCharactersDesc">
 			<Value>Select the requested character positions.</Value>
+		</Data>
+		<Data Name="PickField">
+			<Value>Pick Field</Value>
+		</Data>
+		<Data Name="PickFieldDesc">
+			<Value>Choose a field whose value will be inserted.</Value>
 		</Data>
 		<Data Name="PickIcon">
 			<Value>Pick an icon.</Value>
@@ -1543,6 +1657,15 @@
 		<Data Name="PrintDesc">
 			<Value>Print password entries.</Value>
 		</Data>
+		<Data Name="Private">
+			<Value>Private</Value>
+		</Data>
+		<Data Name="Professional">
+			<Value>Professional</Value>
+		</Data>
+		<Data Name="Quality">
+			<Value>Quality</Value>
+		</Data>
 		<Data Name="QuickSearchExclExpired">
 			<Value>Exclude expired entries in quick searches</Value>
 		</Data>
@@ -1600,6 +1723,9 @@
 		<Data Name="RemoteHostReachable">
 			<Value>Remote host is reachable (ping)</Value>
 		</Data>
+		<Data Name="RepairCmd">
+			<Value>&amp;Repair</Value>
+		</Data>
 		<Data Name="RepairMode">
 			<Value>Repair Mode</Value>
 		</Data>
@@ -1618,6 +1744,9 @@
 		<Data Name="RestartKeePassQuestion">
 			<Value>Do you wish to restart KeePass now?</Value>
 		</Data>
+		<Data Name="Retry">
+			<Value>Retry</Value>
+		</Data>
 		<Data Name="RetryCmd">
 			<Value>&amp;Retry</Value>
 		</Data>
@@ -1632,6 +1761,9 @@
 		</Data>
 		<Data Name="Save">
 			<Value>Save</Value>
+		</Data>
+		<Data Name="SaveBeforeCloseEntry">
+			<Value>Do you want to save the changes you have made to this entry?</Value>
 		</Data>
 		<Data Name="SaveBeforeCloseQuestion">
 			<Value>Do you want to save the changes before closing?</Value>
@@ -1744,11 +1876,17 @@
 		<Data Name="SelfTestFailed">
 			<Value>One or more of the KeePass self-tests failed.</Value>
 		</Data>
+		<Data Name="SendingNoun">
+			<Value>Sending</Value>
+		</Data>
 		<Data Name="Separator">
 			<Value>Separator</Value>
 		</Data>
 		<Data Name="Sequence">
 			<Value>Sequence</Value>
+		</Data>
+		<Data Name="ShowAdvAutoTypeCommands">
+			<Value>Show additional auto-type menu commands</Value>
 		</Data>
 		<Data Name="ShowDerefData">
 			<Value>Show dereferenced data</Value>
@@ -1776,6 +1914,18 @@
 		</Data>
 		<Data Name="ShowTrayOnlyIfTrayed">
 			<Value>Show tray icon only if main window has been sent to tray</Value>
+		</Data>
+		<Data Name="SimilarPasswords">
+			<Value>Similar Passwords</Value>
+		</Data>
+		<Data Name="SimilarPasswordsGroup">
+			<Value>Entries using similar passwords (similarity: {PARAM}):</Value>
+		</Data>
+		<Data Name="SimilarPasswordsList">
+			<Value>List of entries that are using similar passwords.</Value>
+		</Data>
+		<Data Name="SimilarPasswordsNoDup">
+			<Value>The list shows entries that are using similar, but not identical passwords. For finding entries that are using the same passwords, use the 'Find Duplicate Passwords' command (in the main menu).</Value>
 		</Data>
 		<Data Name="Size">
 			<Value>Size</Value>
@@ -1873,6 +2023,9 @@
 		<Data Name="TemplatesNotFound">
 			<Value>No templates found</Value>
 		</Data>
+		<Data Name="TestSuccess">
+			<Value>Test succeeded!</Value>
+		</Data>
 		<Data Name="Text">
 			<Value>Text</Value>
 		</Data>
@@ -1906,8 +2059,17 @@
 		<Data Name="TooManyFilesError">
 			<Value>Too many files have been selected. Select smaller groups and repeat the current procedure a few times.</Value>
 		</Data>
-		<Data Name="TransformationRounds1SecHint">
-			<Value>Compute the number of rounds that lead to a delay of 1 second on this computer.</Value>
+		<Data Name="TransformTime">
+			<Value>The key transformation took {PARAM} seconds.</Value>
+		</Data>
+		<Data Name="TrayIcon">
+			<Value>Tray Icon</Value>
+		</Data>
+		<Data Name="TrayIconGray">
+			<Value>Use gray tray icon</Value>
+		</Data>
+		<Data Name="TrayIconSingleClick">
+			<Value>Single click instead of double click for default tray icon action</Value>
 		</Data>
 		<Data Name="Trigger">
 			<Value>Trigger</Value>
@@ -1978,6 +2140,9 @@
 		<Data Name="UnknownError">
 			<Value>An unknown error occurred.</Value>
 		</Data>
+		<Data Name="UnsupportedByMono">
+			<Value>unsupported by Mono</Value>
+		</Data>
 		<Data Name="UpdateCheck">
 			<Value>Update Check</Value>
 		</Data>
@@ -2026,9 +2191,6 @@
 		<Data Name="UrlSaveTitle">
 			<Value>Save To URL</Value>
 		</Data>
-		<Data Name="UseCustomToolStripRenderer">
-			<Value>Use custom ToolStrip renderer</Value>
-		</Data>
 		<Data Name="UseFileLocks">
 			<Value>Use database lock files</Value>
 		</Data>
@@ -2047,11 +2209,20 @@
 		<Data Name="Uuid">
 			<Value>UUID</Value>
 		</Data>
+		<Data Name="UuidDupInDb">
+			<Value>The database contains duplicate UUIDs.</Value>
+		</Data>
+		<Data Name="UuidFix">
+			<Value>When closing this dialog, KeePass will fix the problem (by generating new UUIDs for duplicates) and continue.</Value>
+		</Data>
 		<Data Name="ValidationFailed">
 			<Value>Validation failed</Value>
 		</Data>
 		<Data Name="Value">
 			<Value>Value</Value>
+		</Data>
+		<Data Name="Verb">
+			<Value>Verb</Value>
 		</Data>
 		<Data Name="VerifyWrittenFileAfterSave">
 			<Value>Verify written file after saving a database</Value>
@@ -2098,6 +2269,9 @@
 		<Data Name="WindowsOS">
 			<Value>Windows</Value>
 		</Data>
+		<Data Name="WindowStyle">
+			<Value>Window style</Value>
+		</Data>
 		<Data Name="WithoutContext">
 			<Value>Without Context</Value>
 		</Data>
@@ -2140,11 +2314,14 @@
 		<Data Name="CryptoStreamFailed">
 			<Value>Failed to initialize encryption/decryption stream!</Value>
 		</Data>
-		<Data Name="EncAlgorithmAes">
-			<Value>AES/Rijndael (256-Bit Key)</Value>
+		<Data Name="EncDataTooLarge">
+			<Value>The data is too large to be encrypted/decrypted securely using {PARAM}.</Value>
 		</Data>
 		<Data Name="ErrorInClipboard">
 			<Value>An extended error report has been copied to the clipboard.</Value>
+		</Data>
+		<Data Name="Expect100Continue">
+			<Value>Expect 100-Continue responses</Value>
 		</Data>
 		<Data Name="FatalError">
 			<Value>Fatal Error</Value>
@@ -2155,14 +2332,23 @@
 		<Data Name="FileCorrupted">
 			<Value>The file is corrupted.</Value>
 		</Data>
-		<Data Name="FileHeaderEndEarly">
-			<Value>The file header is corrupted! Some header data was declared but is not present.</Value>
+		<Data Name="FileHeaderCorrupted">
+			<Value>The file header is corrupted.</Value>
+		</Data>
+		<Data Name="FileIncomplete">
+			<Value>Data is missing at the end of the file, i.e. the file is incomplete.</Value>
+		</Data>
+		<Data Name="FileIncompleteExpc">
+			<Value>Less data than expected could be read from the file.</Value>
 		</Data>
 		<Data Name="FileLoadFailed">
 			<Value>Failed to load the specified file!</Value>
 		</Data>
 		<Data Name="FileLockedWrite">
 			<Value>The file is locked, because the following user is currently writing to it:</Value>
+		</Data>
+		<Data Name="FileNewVerOrPlgReq">
+			<Value>A newer KeePass version or a plugin is required to open this file.</Value>
 		</Data>
 		<Data Name="FileNewVerReq">
 			<Value>A newer KeePass version is required to open this file.</Value>
@@ -2191,6 +2377,9 @@
 		<Data Name="FrameworkNotImplExcp">
 			<Value>The .NET framework/runtime under which KeePass is currently running does not support this operation.</Value>
 		</Data>
+		<Data Name="General">
+			<Value>General</Value>
+		</Data>
 		<Data Name="InvalidCompositeKey">
 			<Value>The composite key is invalid!</Value>
 		</Data>
@@ -2203,6 +2392,9 @@
 		<Data Name="KeePass1xHint">
 			<Value>In order to import KeePass 1.x KDB files, create a new 2.x database file and click 'File' -&gt; 'Import' in the main menu. In the import dialog, choose 'KeePass KDB (1.x)' as file format.</Value>
 		</Data>
+		<Data Name="KeyBits">
+			<Value>{PARAM}-bit key</Value>
+		</Data>
 		<Data Name="KeyFileDbSel">
 			<Value>Database files cannot be used as key files.</Value>
 		</Data>
@@ -2212,14 +2404,29 @@
 		<Data Name="OldFormat">
 			<Value>The selected file appears to be an old format</Value>
 		</Data>
+		<Data Name="Passive">
+			<Value>Passive</Value>
+		</Data>
+		<Data Name="PreAuth">
+			<Value>Pre-authenticate</Value>
+		</Data>
+		<Data Name="Timeout">
+			<Value>Timeout</Value>
+		</Data>
 		<Data Name="TryAgainSecs">
 			<Value>Please try it again in a few seconds.</Value>
 		</Data>
 		<Data Name="UnknownHeaderId">
 			<Value>Unknown header ID!</Value>
 		</Data>
+		<Data Name="UnknownKdf">
+			<Value>Unknown key derivation function!</Value>
+		</Data>
 		<Data Name="UserAccountKeyError">
 			<Value>The operating system did not grant KeePass read/write access to the user profile folder, where the protected user key is stored.</Value>
+		</Data>
+		<Data Name="UserAgent">
+			<Value>User agent</Value>
 		</Data>
 	</StringTable>
 </Translation>

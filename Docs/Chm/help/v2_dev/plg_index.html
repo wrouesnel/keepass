@@ -20,7 +20,7 @@
 	<meta name="DC.Format" content="text/html" />
 	<meta name="DC.Identifier" content="http://keepass.info/" />
 	<meta name="DC.Language" content="en" />
-	<meta name="DC.Rights" content="Copyright (c) 2003-2014 Dominik Reichl" />
+	<meta name="DC.Rights" content="Copyright (c) 2003-2017 Dominik Reichl" />
 
 	<title>Plugin Development - KeePass</title>
 	<base target="_self" />
@@ -67,9 +67,9 @@ prerequisites:</p>
 <li>Latest KeePass source code package. You can get it from the
 <a href="http://keepass.info/download.html">KeePass website</a>.</li>
 <li>A C# 2.0 development IDE
-(<a href="http://msdn.microsoft.com/vstudio/" target="_blank">Microsoft
+(<a href="https://www.visualstudio.com/" target="_blank">Microsoft
 Visual Studio</a>,
-<a href="http://icsharpcode.net/" target="_blank">SharpDevelop</a>
+<a href="http://www.icsharpcode.net/" target="_blank">SharpDevelop</a>
 or any other IDE).</li>
 </ul>
 
@@ -309,8 +309,8 @@ your version information file is located. To let KeePass know,
 override the <code>UpdateUrl</code> string property of your plugin class
 (the one derived from <code>Plugin</code>)
 to return the full, absolute URL of your version information file.
-This should be an <code>http://</code> URL, but an <code>ftp://</code> URL
-is also acceptable.</li>
+This should be an <code>http://</code> or <code>https://</code> URL,
+but an <code>ftp://</code> URL is also acceptable.</li>
 </ul>
 
 <p>Plugin developers have to update their version information file each time
@@ -360,6 +360,39 @@ the URL of the file in all your plugins. When KeePass checks for updates,
 it'll download your version information file only once.
 This reduces network traffic and is faster than downloading a version information
 file for every plugin separately.</p>
+
+<p><b>Signing.</b> Since KeePass 2.34,
+you can <em>optionally</em> digitally sign your version information file using RSA / SHA-512.</p>
+<ul>
+<li>An RSA key pair can for instance be generated like the following:<br />
+<code>using(RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(4096))<br />
+{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;rsa.PersistKeyInCsp = false;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;Console.WriteLine(&quot;Private key: &quot; + rsa.ToXmlString(true));<br />
+&nbsp;&nbsp;&nbsp;&nbsp;Console.WriteLine(&quot;Public key: &quot; + rsa.ToXmlString(false));<br />
+}</code><br />
+All key lengths supported by <code>RSACryptoServiceProvider</code>
+are supported by KeePass (up to .NET 4.5 that is 384 to 16384 bits in 8 bit steps).
+We recommend at least 2048 bits; the main version information file
+(containing the KeePass version) uses 4096 bits.</li>
+<li>In order to tell KeePass to accept a specific version information file
+only when it's verifiable with a specific public key, your plugin must call the
+<code>UpdateCheckEx.SetFileSigKey</code>
+method to associate the specified URL with the specified public key.
+The public key must be an XML string in the format as returned by the
+<code>RSACryptoServiceProvider.ToXmlString</code> method.
+Do not store the private key in your plugin, only the public key.</li>
+<li>To sign an unsigned version information file, hash all trimmed non-empty lines
+between the header and the footer line
+using SHA-512, UTF-8 encoding, each line terminated by <code>'\n'</code>
+(not <code>&quot;\r\n&quot;</code>).
+Sign the hash using the private key
+(if you're using <code>RSACryptoServiceProvider</code>:
+load the private key using its <code>FromXmlString</code> method,
+then compute the signature using the <code>SignData</code> method).
+Encode the hash using Base64 and append it to the first line of the
+version information file.</li>
+</ul>
 
 <br />
 
@@ -414,7 +447,7 @@ plugin developers create/ship PLGX files, not DLLs.
 
 <p><b>Creating PLGX files.</b>
 PLGX files can be created from plugin sources by calling <code>KeePass.exe</code>
-with the <code>--plgx-create</code> command line parameter. If you additionally
+with the <code>--plgx-create</code> command line option. If you additionally
 pass a path to the plugin sources directory (without terminating separator),
 KeePass will use this one; otherwise
 it'll show a folder browser dialog to allow you selecting the directory. If
@@ -444,8 +477,8 @@ the <code>.csproj</code> file.</li>
 located in the plugin source code directory (or any subdirectory of it).</li>
 <li>ResX support. <code>.resx</code> files are automatically compiled to
 binary <code>.resources</code> files.</li>
-<li>.NET 3.5 support (if the default compiler, which is the one of .NET 2.0,
-can't compile the code, KeePass tries using the .NET 3.5 compiler).</li>
+<!-- <li>.NET 3.5 support (if the default compiler, which is the one of .NET 2.0,
+can't compile the code, KeePass tries using the .NET 3.5 compiler).</li> -->
 <li>PLGX cache. PLGX files are compiled once and the generated assembly is stored in a cache.
 For all following KeePass starts, no compiling is required.</li>
 <li>PLGX cache maintenance. The size of the PLGX cache can be seen in the KeePass plugins dialog.
@@ -497,7 +530,7 @@ the cache directory. Example:<br />
 
 <p>In order to specify a quote character on the command line, it has
 to be encoded using three quotes (this is Windows standard, see
-<a href="http://msdn.microsoft.com/en-us/library/bb759784.aspx"
+<a href="https://msdn.microsoft.com/en-us/library/bb759784.aspx"
 target="_blank">MSDN: <code>SHELLEXECUTEINFO</code></a>). So, the command
 line above will actually embed the post-build command
 <code>cmd /c COPY &quot;{PLGX_TEMP_DIR}MyFile.txt&quot;
@@ -514,6 +547,11 @@ commands (typically it is useful to pass the directory locations as arguments
 to your building executable), for example:<br />
 <code>KeePass.exe --plgx-create C:\YourPluginDir
 --plgx-build-post:&quot;{PLGX_TEMP_DIR}MyBuild.exe {PLGX_TEMP_DIR} {PLGX_CACHE_DIR}&quot;</code></p>
+
+<p><b>PLGX debugging.</b>
+When the command line option <code>--debug</code> is
+passed and a PLGX plugin fails to compile, the output of all
+tried compilers is saved to a temporary file.</p>
 
 </body></html>
 

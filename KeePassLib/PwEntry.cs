@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Xml;
+
+#if !KeePassUAP
 using System.Drawing;
+#endif
 
 using KeePassLib.Collections;
 using KeePassLib.Interfaces;
@@ -62,6 +64,8 @@ namespace KeePassLib
 		private string m_strOverrideUrl = string.Empty;
 
 		private List<string> m_vTags = new List<string>();
+
+		private StringDictionaryEx m_dCustomData = new StringDictionaryEx();
 
 		/// <summary>
 		/// UUID of this entry.
@@ -272,6 +276,23 @@ namespace KeePassLib
 			}
 		}
 
+		/// <summary>
+		/// Custom data container that can be used by plugins to store
+		/// own data in KeePass entries.
+		/// The data is stored in the encrypted part of encrypted
+		/// database files.
+		/// Use unique names for your items, e.g. "PluginName_ItemName".
+		/// </summary>
+		public StringDictionaryEx CustomData
+		{
+			get { return m_dCustomData; }
+			internal set
+			{
+				if(value == null) { Debug.Assert(false); throw new ArgumentNullException("value"); }
+				m_dCustomData = value;
+			}
+		}
+
 		public static EventHandler<ObjectTouchedEventArgs> EntryTouched;
 		public EventHandler<ObjectTouchedEventArgs> Touched;
 
@@ -290,8 +311,11 @@ namespace KeePassLib
 
 			if(bSetTimes)
 			{
-				m_tCreation = m_tLastMod = m_tLastAccess =
-					m_tParentGroupLastMod = DateTime.Now;
+				DateTime dtNow = DateTime.UtcNow;
+				m_tCreation = dtNow;
+				m_tLastMod = dtNow;
+				m_tLastAccess = dtNow;
+				m_tParentGroupLastMod = dtNow;
 			}
 		}
 
@@ -315,10 +339,21 @@ namespace KeePassLib
 
 			if(bSetTimes)
 			{
-				m_tCreation = m_tLastMod = m_tLastAccess =
-					m_tParentGroupLastMod = DateTime.Now;
+				DateTime dtNow = DateTime.UtcNow;
+				m_tCreation = dtNow;
+				m_tLastMod = dtNow;
+				m_tLastAccess = dtNow;
+				m_tParentGroupLastMod = dtNow;
 			}
 		}
+
+#if DEBUG
+		// For display in debugger
+		public override string ToString()
+		{
+			return (@"PwEntry '" + m_listStrings.ReadSafe(PwDefs.TitleField) + @"'");
+		}
+#endif
 
 		/// <summary>
 		/// Clone the current entry. The returned entry is an exact value copy
@@ -355,6 +390,8 @@ namespace KeePassLib
 			peNew.m_strOverrideUrl = m_strOverrideUrl;
 
 			peNew.m_vTags = new List<string>(m_vTags);
+
+			peNew.m_dCustomData = m_dCustomData.CloneDeep();
 
 			return peNew;
 		}
@@ -476,6 +513,8 @@ namespace KeePassLib
 				if(m_vTags[iTag] != pe.m_vTags[iTag]) return false;
 			}
 
+			if(!m_dCustomData.Equals(pe.m_dCustomData)) return false;
+
 			return true;
 		}
 
@@ -492,10 +531,10 @@ namespace KeePassLib
 		public void AssignProperties(PwEntry peTemplate, bool bOnlyIfNewer,
 			bool bIncludeHistory, bool bAssignLocationChanged)
 		{
-			Debug.Assert(peTemplate != null); if(peTemplate == null) throw new ArgumentNullException("peTemplate");
+			if(peTemplate == null) { Debug.Assert(false); throw new ArgumentNullException("peTemplate"); }
 
-			if(bOnlyIfNewer && (TimeUtil.Compare(peTemplate.m_tLastMod, m_tLastMod,
-				true) < 0))
+			if(bOnlyIfNewer && (TimeUtil.Compare(peTemplate.m_tLastMod,
+				m_tLastMod, true) < 0))
 				return;
 
 			// Template UUID should be the same as the current one
@@ -505,10 +544,11 @@ namespace KeePassLib
 			if(bAssignLocationChanged)
 				m_tParentGroupLastMod = peTemplate.m_tParentGroupLastMod;
 
-			m_listStrings = peTemplate.m_listStrings;
-			m_listBinaries = peTemplate.m_listBinaries;
-			m_listAutoType = peTemplate.m_listAutoType;
-			if(bIncludeHistory) m_listHistory = peTemplate.m_listHistory;
+			m_listStrings = peTemplate.m_listStrings.CloneDeep();
+			m_listBinaries = peTemplate.m_listBinaries.CloneDeep();
+			m_listAutoType = peTemplate.m_listAutoType.CloneDeep();
+			if(bIncludeHistory)
+				m_listHistory = peTemplate.m_listHistory.CloneDeep();
 
 			m_pwIcon = peTemplate.m_pwIcon;
 			m_pwCustomIconID = peTemplate.m_pwCustomIconID; // Immutable
@@ -526,6 +566,8 @@ namespace KeePassLib
 			m_strOverrideUrl = peTemplate.m_strOverrideUrl;
 
 			m_vTags = new List<string>(peTemplate.m_vTags);
+
+			m_dCustomData = peTemplate.m_dCustomData.CloneDeep();
 		}
 
 		/// <summary>
@@ -549,7 +591,7 @@ namespace KeePassLib
 		/// get touched, too.</param>
 		public void Touch(bool bModified, bool bTouchParents)
 		{
-			m_tLastAccess = DateTime.Now;
+			m_tLastAccess = DateTime.UtcNow;
 			++m_uUsageCount;
 
 			if(bModified) m_tLastMod = m_tLastAccess;
@@ -688,7 +730,7 @@ namespace KeePassLib
 
 		private void RemoveOldestBackup()
 		{
-			DateTime dtMin = DateTime.MaxValue;
+			DateTime dtMin = TimeUtil.SafeMaxValueUtc;
 			uint idxRemove = uint.MaxValue;
 
 			for(uint u = 0; u < m_listHistory.UCount; ++u)
@@ -777,6 +819,9 @@ namespace KeePassLib
 			foreach(string strTag in m_vTags)
 				uSize += (ulong)strTag.Length;
 
+			foreach(KeyValuePair<string, string> kvp in m_dCustomData)
+				uSize += (ulong)kvp.Key.Length + (ulong)kvp.Value.Length;
+
 			return uSize;
 		}
 
@@ -849,7 +894,7 @@ namespace KeePassLib
 
 		public void SetCreatedNow()
 		{
-			DateTime dt = DateTime.Now;
+			DateTime dt = DateTime.UtcNow;
 
 			m_tCreation = dt;
 			m_tLastAccess = dt;
@@ -889,12 +934,7 @@ namespace KeePassLib
 
 			if(m_bCompareNaturally) return StrUtil.CompareNaturally(strA, strB);
 
-#if KeePassRT
-			return string.Compare(strA, strB, m_bCaseInsensitive ?
-				StringComparison.CurrentCultureIgnoreCase : StringComparison.CurrentCulture);
-#else
 			return string.Compare(strA, strB, m_bCaseInsensitive);
-#endif
 		}
 	}
 }

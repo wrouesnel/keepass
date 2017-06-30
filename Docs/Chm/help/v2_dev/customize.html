@@ -20,7 +20,7 @@
 	<meta name="DC.Format" content="text/html" />
 	<meta name="DC.Identifier" content="http://keepass.info/" />
 	<meta name="DC.Language" content="en" />
-	<meta name="DC.Rights" content="Copyright (c) 2003-2014 Dominik Reichl" />
+	<meta name="DC.Rights" content="Copyright (c) 2003-2017 Dominik Reichl" />
 
 	<title>Customization (2.x) - KeePass</title>
 	<base target="_self" />
@@ -103,6 +103,8 @@ the following flags:</p>
 days the master key should/must be changed.</td></tr>
 <tr><td style="text-align: right">0x10</td><td style="text-align: right">16</td>
 <td>Hide password quality progress bars and information labels.</td></tr>
+<tr><td style="text-align: right">0x20</td><td style="text-align: right">32</td>
+<td>Disable 'Help' -&gt; 'Check for Updates' menu item.</td></tr>
 <tr><td style="text-align: right">0x10000</td><td style="text-align: right">65536</td>
 <td>Hide built-in profiles in the
 password generator context menu of the entry editing dialog.</td></tr>
@@ -127,7 +129,7 @@ the 'Tools' menu, you'd specify 3 as value for the <code>UIFlags</code> node
 <img src="../images/b16x16_kcmsystem.png" class="singleimg" alt="Key" />&nbsp;&nbsp;More
 Options</h2>
 
-<ul>
+<ul class="withspc">
 <li><b>Configuration/Defaults/WinFavsBaseFolderName</b>:<br />
 For the 'Windows Favorites' export:
 name of the root folder; the default value is 'KeePass'.</li>
@@ -145,6 +147,26 @@ Specifies the default delay (in ms) between two keypresses sent by auto-type.
 The minimum is 1 ms.
 Note that very small delays may result in target applications not being able
 to process the keypresses correctly.</li>
+
+<li><b>Configuration/Integration/AutoTypeAbortOnWindows</b>:<br />
+This node may contain one or more <code>Window</code> nodes that
+specify disallowed auto-type target windows (the value of each node must
+be a <a href="../base/autotype.html#autowindows">target window filter</a>).
+
+<p>For example, the following configuration disallows auto-typing into
+WordPad and LibreOffice Writer:</p>
+<pre>&lt;AutoTypeAbortOnWindows&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;Window&gt;* - WordPad&lt;/Window&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;Window&gt;* - LibreOffice Writer&lt;/Window&gt;
+&lt;/AutoTypeAbortOnWindows&gt;</pre></li>
+
+<li><b>Configuration/Security/MasterKeyTries</b>:<br />
+Specifies how often the master key dialog appears when entering incorrect
+master keys. The default value is 3.</li>
+
+<li><b>Configuration/Application/ExpirySoonDays</b>:<br />
+Specifies the number of days within which entries are considered
+to expire &quot;soon&quot;. The default value is 7.</li>
 </ul>
 
 </body></html>

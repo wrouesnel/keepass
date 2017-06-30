@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ namespace KeePass.DataExchange.Formats
 
 		public override bool TryBeginExport()
 		{
-			return this.TryBeginImport();
+			return TryBeginImport();
 		}
 
 		public override void Import(PwDatabase pwStorage, Stream sInput,
@@ -105,7 +105,7 @@ namespace KeePass.DataExchange.Formats
 
 				byte[] pbKdb = File.ReadAllBytes(strTempFile);
 				sOutput.Write(pbKdb, 0, pbKdb.Length);
-				Array.Clear(pbKdb, 0, pbKdb.Length);
+				MemUtil.ZeroByteArray(pbKdb);
 			}
 			catch(Exception exKdb)
 			{
