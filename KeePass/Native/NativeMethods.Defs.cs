@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ namespace KeePass.Native
 		internal const int WM_MBUTTONDOWN = 0x0207;
 		// internal const int WM_MOUSEWHEEL = 0x020A;
 		// internal const int WM_ERASEBKGND = 0x0014;
+		internal const int WM_INPUTLANGCHANGEREQUEST = 0x0050;
 
 		internal const int WM_NOTIFY = 0x004E;
 
@@ -68,11 +69,14 @@ namespace KeePass.Native
 		internal const uint INPUT_KEYBOARD = 1;
 		internal const uint INPUT_HARDWARE = 2;
 
-		internal const int VK_RETURN = 0x0D;
+		// internal const int VK_RETURN = 0x0D;
 		internal const int VK_SHIFT = 0x10;
 		internal const int VK_CONTROL = 0x11;
 		internal const int VK_MENU = 0x12;
-		internal const int VK_CAPITAL = 0x14;
+		internal const int VK_CAPITAL = 0x14; // Caps Lock
+		// internal const int VK_ESCAPE = 0x1B;
+		// internal const int VK_SPACE = 0x20;
+		internal const int VK_NUMLOCK = 0x90;
 		internal const int VK_LSHIFT = 0xA0;
 		internal const int VK_RSHIFT = 0xA1;
 		internal const int VK_LCONTROL = 0xA2;
@@ -88,9 +92,14 @@ namespace KeePass.Native
 		// internal const int VK_F7 = 0x76;
 		// internal const int VK_F8 = 0x77;
 
+		internal const uint MAPVK_VK_TO_VSC = 0;
+
 		internal const uint KEYEVENTF_EXTENDEDKEY = 1;
 		internal const uint KEYEVENTF_KEYUP = 2;
 		internal const uint KEYEVENTF_UNICODE = 4;
+
+		internal const ushort LANG_CZECH = 0x05;
+		internal const ushort LANG_POLISH = 0x15;
 
 		// internal const uint GW_CHILD = 5;
 		internal const uint GW_HWNDNEXT = 2;
@@ -118,8 +127,18 @@ namespace KeePass.Native
 
 		internal const int SCF_SELECTION = 0x0001;
 
+		internal const uint CFM_BOLD = 0x00000001;
+		internal const uint CFM_ITALIC = 0x00000002;
+		internal const uint CFM_UNDERLINE = 0x00000004;
+		internal const uint CFM_STRIKEOUT = 0x00000008;
 		internal const uint CFM_LINK = 0x00000020;
-		internal const uint CFE_LINK = 0x00000020;
+		internal const uint CFM_SIZE = 0x80000000;
+
+		internal const uint CFE_BOLD = 0x0001;
+		internal const uint CFE_ITALIC = 0x0002;
+		internal const uint CFE_UNDERLINE = 0x0004;
+		internal const uint CFE_STRIKEOUT = 0x0008;
+		internal const uint CFE_LINK = 0x0020;
 
 		internal const int SC_MINIMIZE = 0xF020;
 		internal const int SC_MAXIMIZE = 0xF030;
@@ -144,7 +163,12 @@ namespace KeePass.Native
 		// internal const int LVM_GETGROUPINFOBYINDEX = LVM_FIRST + 153; // >= Vista
 
 		internal const int TV_FIRST = 0x1100;
+		internal const int TVM_GETTOOLTIPS = TV_FIRST + 25;
 		internal const int TVM_SETEXTENDEDSTYLE = TV_FIRST + 44;
+
+		internal const int TTM_SETDELAYTIME = WM_USER + 3;
+		internal const int TTM_GETDELAYTIME = WM_USER + 21;
+		internal const int TTDT_AUTOPOP = 2;
 
 		internal const int WM_MOUSEACTIVATE = 0x21;
 		internal const int MA_ACTIVATE = 1;
@@ -203,9 +227,14 @@ namespace KeePass.Native
 		internal const int LOGPIXELSX = 88;
 		internal const int LOGPIXELSY = 90;
 
+		// internal const int SM_CXSMICON = 49;
+		// internal const int SM_CYSMICON = 50;
+
 		// internal const uint PROCESS_QUERY_INFORMATION = 0x0400;
 
 		internal const uint ACTCTX_FLAG_ASSEMBLY_DIRECTORY_VALID = 0x04;
+
+		internal const int INFOTIPSIZE = 1024;
 
 		// internal const uint DI_NORMAL = 0x0003;
 
@@ -384,6 +413,27 @@ namespace KeePass.Native
 			SnapAll = (SnapHeapList | SnapProcess | SnapThread | SnapModule),
 
 			Inherit = 0x80000000U
+		}
+
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/aa380337.aspx
+		[Flags]
+		internal enum STGM : uint
+		{
+			Read = 0x00000000,
+			Write = 0x00000001,
+			ReadWrite = 0x00000002,
+
+			ShareDenyNone = 0x00000040,
+			ShareDenyRead = 0x00000030,
+			ShareDenyWrite = 0x00000020,
+			ShareExclusive = 0x00000010
+		}
+
+		internal enum ProcessDpiAwareness : uint
+		{
+			Unaware = 0,
+			SystemAware = 1,
+			PerMonitorAware = 2
 		}
 	}
 }

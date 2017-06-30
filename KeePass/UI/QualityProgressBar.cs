@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,14 +19,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.ComponentModel;
-using System.Diagnostics;
 
+using KeePass.App;
 using KeePass.Util;
 
 using KeePassLib.Native;
@@ -66,6 +67,7 @@ namespace KeePass.UI
 
 		private ProgressBarStyle m_pbsStyle = ProgressBarStyle.Continuous;
 		[Browsable(false)]
+		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
 		public ProgressBarStyle Style
 		{
 			get { return m_pbsStyle; }
@@ -132,8 +134,8 @@ namespace KeePass.UI
 			int nDrawWidth = (int)((float)rectDraw.Width * (float)nNormPos /
 				(float)nNormMax);
 
-			Color clrStart = Color.FromArgb(255, 128, 0);
-			Color clrEnd = Color.FromArgb(0, 255, 0);
+			Color clrStart = AppDefs.ColorQualityLow;
+			Color clrEnd = AppDefs.ColorQualityHigh;
 			if(!this.Enabled)
 			{
 				clrStart = UIUtil.ColorToGrayscale(SystemColors.ControlDark);

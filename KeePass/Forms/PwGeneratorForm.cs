@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 using KeePass.App;
-using KeePass.UI;
 using KeePass.Resources;
+using KeePass.UI;
 using KeePass.Util;
 
 using KeePassLib;
@@ -98,7 +98,7 @@ namespace KeePass.Forms
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_KGPG_Gen, KPRes.PasswordOptions,
 				KPRes.PasswordOptionsDesc);
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 
 			UIUtil.SetButtonImage(m_btnProfileAdd,
 				Properties.Resources.B16x16_FileSaveAs, false);
@@ -110,23 +110,31 @@ namespace KeePass.Forms
 			FontUtil.AssignDefaultBold(m_rbCustom);
 			FontUtil.AssignDefaultMono(m_tbPreview, true);
 
+			UIUtil.ConfigureToolTip(m_ttMain);
 			m_ttMain.SetToolTip(m_btnProfileAdd, KPRes.GenProfileSaveDesc);
 			m_ttMain.SetToolTip(m_btnProfileRemove, KPRes.GenProfileRemoveDesc);
 
 			m_bBlockUIUpdate = true;
 
-			m_cbUpperCase.Text += @" (A, B, C, ...)";
-			m_cbLowerCase.Text += @" (a, b, c, ...)";
-			m_cbDigits.Text += @" (0, 1, 2, ...)";
-			m_cbMinus.Text += @" (-)";
-			m_cbUnderline.Text += @" (_)";
-			m_cbSpace.Text += @" ( )";
-			m_cbSpecial.Text += @" (!, $, %, &&, ...)";
-			m_cbBrackets.Text += @" ([, ], {, }, (, ), <, >)";
-			m_cbNoRepeat.Text += @" *";
-			m_cbExcludeLookAlike.Text += @" (l|1I, O0) *";
-			m_lblExcludeChars.Text += @" *";
-			m_lblSecRedInfo.Text = @"* " + m_lblSecRedInfo.Text;
+			using(RtlAwareResizeScope r = new RtlAwareResizeScope(
+				m_cbUpperCase, m_cbLowerCase, m_cbDigits, m_cbMinus,
+				m_cbUnderline, m_cbSpace, m_cbSpecial, m_cbBrackets,
+				m_cbNoRepeat, m_cbExcludeLookAlike, m_lblExcludeChars,
+				m_lblSecRedInfo))
+			{
+				m_cbUpperCase.Text += @" (A, B, C, ...)";
+				m_cbLowerCase.Text += @" (a, b, c, ...)";
+				m_cbDigits.Text += @" (0, 1, 2, ...)";
+				m_cbMinus.Text += @" (-)";
+				m_cbUnderline.Text += @" (_)";
+				m_cbSpace.Text += @" ( )";
+				m_cbSpecial.Text += @" (!, $, %, &&, ...)";
+				m_cbBrackets.Text += @" ([, ], {, }, (, ), <, >)";
+				m_cbNoRepeat.Text += @" *";
+				m_cbExcludeLookAlike.Text += @" (l|1I, O0) *";
+				m_lblExcludeChars.Text += @" *";
+				m_lblSecRedInfo.Text = @"* " + m_lblSecRedInfo.Text;
+			}
 
 			m_cmbCustomAlgo.Items.Add(NoCustomAlgo);
 			foreach(CustomPwGenerator pwg in Program.PwGeneratorPool)
@@ -538,12 +546,17 @@ namespace KeePass.Forms
 				string.IsNullOrEmpty(pwOpt.CustomAlgorithmUuid))
 				n = 0;
 
+			PwEntry peContext = new PwEntry(true, true);
+			MainForm mf = Program.MainForm;
+			PwDatabase pdContext = ((mf != null) ? mf.ActiveDatabase : null);
+
+			bool bAcceptAlways = false;
 			for(uint i = 0; i < n; ++i)
 			{
 				Application.DoEvents();
 
-				ProtectedString psNew;
-				PwGenerator.Generate(out psNew, pwOpt, null, Program.PwGeneratorPool);
+				ProtectedString psNew = PwGeneratorUtil.GenerateAcceptable(
+					pwOpt, null, peContext, pdContext, ref bAcceptAlways);
 				sbList.AppendLine(psNew.ReadString());
 				m_pbPreview.Value = (int)((100 * i) / MaxPreviewPasswords);
 			}

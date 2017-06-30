@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -141,20 +141,9 @@ namespace KeePass.Util.Spr
 					string strOptions = string.Empty;
 					if(vParams.Length >= 2) strOptions = (vParams[1] ?? string.Empty);
 
-					Dictionary<string, string> dOptions = new Dictionary<string, string>();
-					string[] vOptions = strOptions.Split(new char[] { ',' },
-						StringSplitOptions.RemoveEmptyEntries);
-					foreach(string strOption in vOptions)
-					{
-						string[] vKvp = strOption.Split(new char[] { '=' },
-							StringSplitOptions.None);
-						if(vKvp.Length != 2) continue;
+					Dictionary<string, string> dOptions = SplitParams(strOptions);
 
-						dOptions[vKvp[0].Trim().ToLower()] = vKvp[1].Trim();
-					}
-
-					string strID = string.Empty;
-					if(dOptions.ContainsKey("id")) strID = dOptions["id"].ToLower();
+					string strID = GetParam(dOptions, "id", string.Empty).ToLower();
 
 					uint uCharCount = 0;
 					if(dOptions.ContainsKey("c"))
@@ -182,11 +171,9 @@ namespace KeePass.Util.Spr
 						if(dOptions.ContainsKey("conv-offset"))
 							int.TryParse(dOptions["conv-offset"], out iOffset);
 
-						string strConvFmt = string.Empty;
-						if(dOptions.ContainsKey("conv-fmt"))
-							strConvFmt = dOptions["conv-fmt"];
+						string strConvFmt = GetParam(dOptions, "conv-fmt", string.Empty);
 
-						string strConv = dOptions["conv"];
+						string strConv = dOptions["conv"]; // Exists, see above
 						if(strConv.Equals("d", StrUtil.CaseIgnoreCmp))
 						{
 							strRep = ConvertToDownArrows(strRep, iOffset, strConvFmt);
@@ -224,6 +211,52 @@ namespace KeePass.Util.Spr
 		{
 			if(string.IsNullOrEmpty(str)) return string.Empty;
 
+			Dictionary<char, int> dDowns = new Dictionary<char, int>();
+			int iDowns = 0;
+			foreach(char ch in strLayout)
+			{
+				if(ch == '0') AddCharSeq(dDowns, '0', '9', ref iDowns);
+				else if(ch == '1')
+				{
+					AddCharSeq(dDowns, '1', '9', ref iDowns);
+					AddCharSeq(dDowns, '0', '0', ref iDowns);
+				}
+				else if(ch == 'a')
+				{
+					AddCharSeq(dDowns, 'a', 'z', ref iDowns);
+					if(strLayout.IndexOf('A') < 0)
+					{
+						iDowns -= 26; // Make case-insensitive
+						AddCharSeq(dDowns, 'A', 'Z', ref iDowns);
+					}
+				}
+				else if(ch == 'A')
+				{
+					AddCharSeq(dDowns, 'A', 'Z', ref iDowns);
+					if(strLayout.IndexOf('a') < 0)
+					{
+						iDowns -= 26; // Make case-insensitive
+						AddCharSeq(dDowns, 'a', 'z', ref iDowns);
+					}
+				}
+				else if(ch == '?') ++iDowns;
+			}
+
+			// Defaults for undefined characters
+			if(!dDowns.ContainsKey('0'))
+			{
+				iDowns = 0;
+				AddCharSeq(dDowns, '0', '9', ref iDowns);
+			}
+			if(!dDowns.ContainsKey('a'))
+			{
+				iDowns = 0;
+				AddCharSeq(dDowns, 'a', 'z', ref iDowns);
+				iDowns = 0;
+				AddCharSeq(dDowns, 'A', 'Z', ref iDowns);
+			}
+			else { Debug.Assert(dDowns.ContainsKey('A')); }
+
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i < str.Length; ++i)
 			{
@@ -231,46 +264,28 @@ namespace KeePass.Util.Spr
 
 				char ch = str[i];
 
-				int? iDowns = null;
-				if(strLayout.Length == 0)
-				{
-					if((ch >= '0') && (ch <= '9')) iDowns = (int)ch - '0';
-					else if((ch >= 'a') && (ch <= 'z')) iDowns = (int)ch - 'a';
-					else if((ch >= 'A') && (ch <= 'Z')) iDowns = (int)ch - 'A';
-				}
-				else if(strLayout.Equals("0a", StrUtil.CaseIgnoreCmp))
-				{
-					if((ch >= '0') && (ch <= '9')) iDowns = (int)ch - '0';
-					else if((ch >= 'a') && (ch <= 'z')) iDowns = (int)ch - 'a' + 10;
-					else if((ch >= 'A') && (ch <= 'Z')) iDowns = (int)ch - 'A' + 10;
-				}
-				else if(strLayout.Equals("a0", StrUtil.CaseIgnoreCmp))
-				{
-					if((ch >= '0') && (ch <= '9')) iDowns = (int)ch - '0' + 26;
-					else if((ch >= 'a') && (ch <= 'z')) iDowns = (int)ch - 'a';
-					else if((ch >= 'A') && (ch <= 'Z')) iDowns = (int)ch - 'A';
-				}
-				else if(strLayout.Equals("1a", StrUtil.CaseIgnoreCmp))
-				{
-					if((ch >= '1') && (ch <= '9')) iDowns = (int)ch - '1';
-					else if(ch == '0') iDowns = 9;
-					else if((ch >= 'a') && (ch <= 'z')) iDowns = (int)ch - 'a' + 10;
-					else if((ch >= 'A') && (ch <= 'Z')) iDowns = (int)ch - 'A' + 10;
-				}
-				else if(strLayout.Equals("a1", StrUtil.CaseIgnoreCmp))
-				{
-					if((ch >= '1') && (ch <= '9')) iDowns = (int)ch - '1' + 26;
-					else if(ch == '0') iDowns = 9 + 26;
-					else if((ch >= 'a') && (ch <= 'z')) iDowns = (int)ch - 'a';
-					else if((ch >= 'A') && (ch <= 'Z')) iDowns = (int)ch - 'A';
-				}
-
-				if(!iDowns.HasValue) continue;
+				if(!dDowns.TryGetValue(ch, out iDowns)) continue;
 
 				for(int j = 0; j < (iOffset + iDowns); ++j) sb.Append(@"{DOWN}");
 			}
 
 			return sb.ToString();
+		}
+
+		private static void AddCharSeq(Dictionary<char, int> d, char chStart,
+			char chLast, ref int iStart)
+		{
+			int p = iStart;
+
+			for(char ch = chStart; ch <= chLast; ++ch)
+			{
+				// Prefer the first definition (less keypresses)
+				if(!d.ContainsKey(ch)) d[ch] = p;
+
+				++p;
+			}
+
+			iStart = p;
 		}
 	}
 }

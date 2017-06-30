@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,17 +20,19 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.Globalization;
 
-using KeePass.UI;
+using KeePass.App;
 using KeePass.Resources;
+using KeePass.UI;
 
 using KeePassLib;
 using KeePassLib.Collections;
+using KeePassLib.Utility;
 
 namespace KeePass.Forms
 {
@@ -43,6 +45,7 @@ namespace KeePass.Forms
 
 		private PwIcon m_pwIconIndex = 0;
 		private PwUuid m_pwCustomIconID = PwUuid.Zero;
+		private StringDictionaryEx m_sdCustomData = null;
 
 		private ExpiryControlGroup m_cgExpiry = new ExpiryControlGroup();
 
@@ -78,7 +81,7 @@ namespace KeePass.Forms
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_Folder_Txt, strTitle,
 				(m_bCreatingNew ? KPRes.AddGroupDesc : KPRes.EditGroupDesc));
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = strTitle;
 
 			UIUtil.SetButtonImage(m_btnAutoTypeEdit,
@@ -91,15 +94,15 @@ namespace KeePass.Forms
 			UIUtil.SetMultilineText(m_tbNotes, m_pwGroup.Notes);
 
 			if(!m_pwCustomIconID.Equals(PwUuid.Zero))
-				UIUtil.SetButtonImage(m_btnIcon, m_pwDatabase.GetCustomIcon(
-					m_pwCustomIconID), true);
+				UIUtil.SetButtonImage(m_btnIcon, DpiUtil.GetIcon(
+					m_pwDatabase, m_pwCustomIconID), true);
 			else
 				UIUtil.SetButtonImage(m_btnIcon, m_ilClientIcons.Images[
 					(int)m_pwIconIndex], true);
 
 			if(m_pwGroup.Expires)
 			{
-				m_dtExpires.Value = m_pwGroup.ExpiryTime;
+				m_dtExpires.Value = TimeUtil.ToLocal(m_pwGroup.ExpiryTime, true);
 				m_cbExpires.Checked = true;
 			}
 			else // Does not expire
@@ -127,6 +130,10 @@ namespace KeePass.Forms
 				m_rbAutoTypeInherit.Checked = true;
 			else m_rbAutoTypeOverride.Checked = true;
 
+			m_sdCustomData = m_pwGroup.CustomData.CloneDeep();
+			UIUtil.StrDictListInit(m_lvCustomData);
+			UIUtil.StrDictListUpdate(m_lvCustomData, m_sdCustomData);
+
 			CustomizeForScreenReader();
 			EnableControlsEx();
 			UIUtil.SetFocus(m_tbName, this);
@@ -144,6 +151,8 @@ namespace KeePass.Forms
 		{
 			m_tbDefaultAutoTypeSeq.Enabled = m_btnAutoTypeEdit.Enabled =
 				!m_rbAutoTypeInherit.Checked;
+
+			m_btnCDDel.Enabled = (m_lvCustomData.SelectedItems.Count > 0);
 		}
 
 		private void OnBtnOK(object sender, EventArgs e)
@@ -164,6 +173,8 @@ namespace KeePass.Forms
 			if(m_rbAutoTypeInherit.Checked)
 				m_pwGroup.DefaultAutoTypeSequence = string.Empty;
 			else m_pwGroup.DefaultAutoTypeSequence = m_tbDefaultAutoTypeSeq.Text;
+
+			m_pwGroup.CustomData = m_sdCustomData;
 		}
 
 		private void OnBtnCancel(object sender, EventArgs e)
@@ -186,8 +197,8 @@ namespace KeePass.Forms
 				if(!ipf.ChosenCustomIconUuid.Equals(PwUuid.Zero)) // Custom icon
 				{
 					m_pwCustomIconID = ipf.ChosenCustomIconUuid;
-					UIUtil.SetButtonImage(m_btnIcon, m_pwDatabase.GetCustomIcon(
-						m_pwCustomIconID), true);
+					UIUtil.SetButtonImage(m_btnIcon, DpiUtil.GetIcon(
+						m_pwDatabase, m_pwCustomIconID), true);
 				}
 				else // Standard icon
 				{
@@ -227,6 +238,18 @@ namespace KeePass.Forms
 		{
 			CleanUpEx();
 			GlobalWindowManager.RemoveWindow(this);
+		}
+
+		private void OnCustomDataSelectedIndexChanged(object sender, EventArgs e)
+		{
+			EnableControlsEx();
+		}
+
+		private void OnBtnCDDel(object sender, EventArgs e)
+		{
+			UIUtil.StrDictListDeleteSel(m_lvCustomData, m_sdCustomData);
+			UIUtil.SetFocus(m_lvCustomData, this);
+			EnableControlsEx();
 		}
 	}
 }

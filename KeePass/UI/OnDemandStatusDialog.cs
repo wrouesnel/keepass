@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ namespace KeePass.UI
 
 		private Thread m_th = null;
 		private StatusProgressForm m_dlgModal = null;
-		private object m_objSync = new object();
+		private readonly object m_objSync = new object();
 
 		private const uint InitialProgress = 0;
 		private const string InitialStatus = null;

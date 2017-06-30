@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using System.Diagnostics;
 
+using KeePass.App;
 using KeePass.UI;
 using KeePass.Util;
 using KeePass.Util.Spr;
@@ -92,9 +93,9 @@ namespace KeePass.Forms
 
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_XMag, strTitle, KPRes.SearchDesc);
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 
-			m_cbDerefData.Text = m_cbDerefData.Text + " (" + KPRes.Slow + ")";
+			UIUtil.SetText(m_cbDerefData, m_cbDerefData.Text + " (" + KPRes.Slow + ")");
 
 			SearchParameters sp = Program.Config.Defaults.SearchParameters;
 			m_cbTitle.Checked = sp.SearchInTitles;
@@ -103,9 +104,10 @@ namespace KeePass.Forms
 			m_cbPassword.Checked = sp.SearchInPasswords;
 			m_cbNotes.Checked = sp.SearchInNotes;
 			m_cbOtherFields.Checked = sp.SearchInOther;
+			m_cbStringName.Checked = sp.SearchInStringNames;
+			m_cbTags.Checked = sp.SearchInTags;
 			m_cbUuid.Checked = sp.SearchInUuids;
 			m_cbGroupName.Checked = sp.SearchInGroupNames;
-			m_cbTags.Checked = sp.SearchInTags;
 
 			StringComparison sc = sp.ComparisonMode;
 			m_cbCaseSensitive.Checked = ((sc != StringComparison.CurrentCultureIgnoreCase) &&
@@ -118,6 +120,7 @@ namespace KeePass.Forms
 			string strTrf = SearchUtil.GetTransformation(sp);
 			m_cbDerefData.Checked = (strTrf == SearchUtil.StrTrfDeref);
 
+			EnableControlsEx();
 			UIUtil.SetFocus(m_tbSearch, this);
 		}
 
@@ -125,9 +128,13 @@ namespace KeePass.Forms
 		{
 			SearchParameters sp = GetSearchParameters(true);
 
-			if(sp.RegularExpression) // Validate regular expression
+			if(sp.RegularExpression)
 			{
-				try { new Regex(sp.SearchString); }
+				try // Validate regular expression
+				{
+					Regex rx = new Regex(sp.SearchString);
+					rx.IsMatch("ABCD");
+				}
 				catch(Exception exReg)
 				{
 					MessageService.ShowWarning(exReg.Message);
@@ -193,9 +200,10 @@ namespace KeePass.Forms
 			sp.SearchInUrls = m_cbURL.Checked;
 			sp.SearchInNotes = m_cbNotes.Checked;
 			sp.SearchInOther = m_cbOtherFields.Checked;
+			sp.SearchInStringNames = m_cbStringName.Checked;
+			sp.SearchInTags = m_cbTags.Checked;
 			sp.SearchInUuids = m_cbUuid.Checked;
 			sp.SearchInGroupNames = m_cbGroupName.Checked;
-			sp.SearchInTags = m_cbTags.Checked;
 
 			sp.ComparisonMode = (m_cbCaseSensitive.Checked ?
 				StringComparison.InvariantCulture :
@@ -207,6 +215,16 @@ namespace KeePass.Forms
 				SearchUtil.StrTrfDeref : string.Empty));
 
 			return sp;
+		}
+
+		private void EnableControlsEx()
+		{
+			m_lblHints.Enabled = !m_cbRegEx.Checked;
+		}
+
+		private void OnRegExCheckedChanged(object sender, EventArgs e)
+		{
+			EnableControlsEx();
 		}
 	}
 }

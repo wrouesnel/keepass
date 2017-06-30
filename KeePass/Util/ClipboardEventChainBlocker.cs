@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,15 +61,13 @@ namespace KeePass.Util
 
 		private void Dispose(bool bDisposing)
 		{
-			if(m_form != null)
+			if(bDisposing && (m_form != null))
 			{
 				try
 				{
-					if(NativeMethods.ChangeClipboardChain(m_form.Handle,
-						m_hChain) == false)
-					{
-						Debug.Assert(false);
-					}
+					// Ignore return value (no assert); see documentation
+					// of ChangeClipboardChain
+					NativeMethods.ChangeClipboardChain(m_form.Handle, m_hChain);
 				}
 				catch(Exception) { Debug.Assert(false); }
 

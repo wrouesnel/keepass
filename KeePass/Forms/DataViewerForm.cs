@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.IO;
 
+using KeePass.App;
 using KeePass.Native;
 using KeePass.Resources;
 using KeePass.UI;
@@ -56,6 +57,7 @@ namespace KeePass.Forms
 		private readonly string m_strDataExpand = "--- " + KPRes.More + " ---";
 		private bool m_bDataExpanded = false;
 
+		private string m_strInitialFormRect = string.Empty;
 		private RichTextBoxContextMenu m_ctxText = new RichTextBoxContextMenu();
 
 		private Image m_img = null;
@@ -93,14 +95,16 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
+			this.DoubleBuffered = true;
 
 			string strTitle = PwDefs.ShortProductName + " " + KPRes.DataViewer;
 			if(m_strDataDesc.Length > 0)
 				strTitle = m_strDataDesc + " - " + strTitle;
 			this.Text = strTitle;
 
-			this.DoubleBuffered = true;
+			m_strInitialFormRect = UIUtil.SetWindowScreenRectEx(this,
+				Program.Config.UI.DataViewerRect);
 
 			m_tssStatusMain.Text = KPRes.Ready;
 			m_ctxText.Attach(m_rtbText, this);
@@ -174,15 +178,17 @@ namespace KeePass.Forms
 			catch(Exception) { } // ScrollToCaret might throw (but still works)
 		}
 
-		private string BinaryDataToString()
+		private string BinaryDataToString(bool bReplaceNulls)
 		{
 			string strEnc = m_tscEncoding.Text;
 			StrEncodingInfo sei = StrUtil.GetEncoding(strEnc);
 
 			try
 			{
-				return (sei.Encoding.GetString(m_pbData, (int)m_uStartOffset,
+				string str = (sei.Encoding.GetString(m_pbData, (int)m_uStartOffset,
 					m_pbData.Length - (int)m_uStartOffset) ?? string.Empty);
+				if(bReplaceNulls) str = StrUtil.ReplaceNulls(str);
+				return str;
 			}
 			catch(Exception) { }
 
@@ -341,7 +347,7 @@ namespace KeePass.Forms
 					UpdateHexView();
 				else if(strViewer == m_strViewerText)
 				{
-					string strData = BinaryDataToString();
+					string strData = BinaryDataToString(true);
 					SetRtbData(strData, (m_bdc == BinaryDataClass.RichText), false);
 				}
 				else if(strViewer == m_strViewerImage)
@@ -351,7 +357,7 @@ namespace KeePass.Forms
 				}
 				else if(strViewer == m_strViewerWeb)
 				{
-					string strData = BinaryDataToString();
+					string strData = BinaryDataToString(false);
 					UIUtil.SetWebBrowserDocument(m_webBrowser, strData);
 				}
 			}
@@ -451,14 +457,7 @@ namespace KeePass.Forms
 			{
 				Image imgToDispose = m_imgResized;
 
-				Image img = new Bitmap(dx, dy, PixelFormat.Format32bppArgb);
-				using(Graphics g = Graphics.FromImage(img))
-				{
-					g.InterpolationMode = InterpolationMode.High;
-					g.SmoothingMode = SmoothingMode.HighQuality;
-					g.DrawImage(m_img, 0, 0, img.Width, img.Height);
-				}
-				m_imgResized = img;
+				m_imgResized = GfxUtil.ScaleImage(m_img, dx, dy);
 				m_picBox.Image = m_imgResized;
 
 				if(imgToDispose != null) imgToDispose.Dispose();
@@ -487,6 +486,10 @@ namespace KeePass.Forms
 				}
 			}
 
+			string strRect = UIUtil.GetWindowScreenRect(this);
+			if(strRect != m_strInitialFormRect) // Don't overwrite ""
+				Program.Config.UI.DataViewerRect = strRect;
+
 			m_picBox.Image = null;
 			if(m_img != null) { m_img.Dispose(); m_img = null; }
 			if(m_imgResized != null) { m_imgResized.Dispose(); m_imgResized = null; }
@@ -499,12 +502,12 @@ namespace KeePass.Forms
 		{
 			if(keyData == Keys.Escape)
 			{
-				if(msg.Msg == NativeMethods.WM_KEYDOWN)
+				bool? obKeyDown = NativeMethods.IsKeyDownMessage(ref msg);
+				if(obKeyDown.HasValue)
 				{
-					this.Close();
+					if(obKeyDown.Value) this.Close();
 					return true;
 				}
-				else if(msg.Msg == NativeMethods.WM_KEYUP) return true;
 			}
 
 			return base.ProcessCmdKey(ref msg, keyData);

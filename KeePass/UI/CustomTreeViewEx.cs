@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ using System.Diagnostics;
 
 using KeePass.Native;
 using KeePass.Util;
+
+using NativeLib = KeePassLib.Native.NativeLib;
 
 namespace KeePass.UI
 {
@@ -143,13 +145,39 @@ namespace KeePass.UI
 
 			try
 			{
-				if(this.DoubleBuffered)
+				if(this.DoubleBuffered && !NativeLib.IsUnix())
 				{
 					IntPtr p = new IntPtr((int)NativeMethods.TVS_EX_DOUBLEBUFFER);
 					NativeMethods.SendMessage(this.Handle,
 						NativeMethods.TVM_SETEXTENDEDSTYLE, p, p);
 				}
 				else { Debug.Assert(!WinUtil.IsAtLeastWindowsVista); }
+			}
+			catch(Exception) { Debug.Assert(false); }
+
+			// Display tooltips for a longer time;
+			// https://sourceforge.net/p/keepass/feature-requests/2038/
+			try
+			{
+				if(this.ShowNodeToolTips && !NativeLib.IsUnix())
+				{
+					IntPtr hTip = NativeMethods.SendMessage(this.Handle,
+						NativeMethods.TVM_GETTOOLTIPS, IntPtr.Zero, IntPtr.Zero);
+					if(hTip != IntPtr.Zero)
+					{
+						// Apparently the maximum value is 2^15 - 1 = 32767
+						// (signed short maximum); any larger values result
+						// in truncated values or are ignored
+						IntPtr pTime = new IntPtr((int)short.MaxValue - 3);
+						NativeMethods.SendMessage(hTip, NativeMethods.TTM_SETDELAYTIME,
+							new IntPtr(NativeMethods.TTDT_AUTOPOP), pTime);
+
+						Debug.Assert(NativeMethods.SendMessage(hTip,
+							NativeMethods.TTM_GETDELAYTIME, new IntPtr(
+							NativeMethods.TTDT_AUTOPOP), IntPtr.Zero) == pTime);
+					}
+					else { Debug.Assert(false); }
+				}
 			}
 			catch(Exception) { Debug.Assert(false); }
 		}

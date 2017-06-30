@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ namespace KeePass.App.Configuration
 		DisableTriggers = 0x4,
 		DisableKeyChangeDays = 0x8,
 		HidePwQuality = 0x10,
+		DisableUpdateCheck = 0x20,
 
 		HideBuiltInPwGenPrfInEntryDlg = 0x10000,
 		ShowLastAccessTime = 0x20000
@@ -178,12 +179,24 @@ namespace KeePass.App.Configuration
 			set { m_bShowRecycleDlg = value; }
 		}
 
-		private bool m_bUseCustomTsRenderer = true;
-		[DefaultValue(true)]
-		public bool UseCustomToolStripRenderer
+		// private bool m_bUseCustomTsRenderer = true;
+		// [DefaultValue(true)]
+		// public bool UseCustomToolStripRenderer
+		// {
+		//	get { return m_bUseCustomTsRenderer; }
+		//	set { m_bUseCustomTsRenderer = value; }
+		// }
+
+		private string m_strToolStripRenderer = string.Empty;
+		[DefaultValue("")]
+		public string ToolStripRenderer
 		{
-			get { return m_bUseCustomTsRenderer; }
-			set { m_bUseCustomTsRenderer = value; }
+			get { return m_strToolStripRenderer; }
+			set
+			{
+				if(value == null) throw new ArgumentNullException("value");
+				m_strToolStripRenderer = value;
+			}
 		}
 
 		private bool m_bOptScreenReader = false;
@@ -192,6 +205,18 @@ namespace KeePass.App.Configuration
 		{
 			get { return m_bOptScreenReader; }
 			set { m_bOptScreenReader = value; }
+		}
+
+		private string m_strDataViewerRect = string.Empty;
+		[DefaultValue("")]
+		public string DataViewerRect
+		{
+			get { return m_strDataViewerRect; }
+			set
+			{
+				if(value == null) throw new ArgumentNullException("value");
+				m_strDataViewerRect = value;
+			}
 		}
 
 		private string m_strDataEditorRect = string.Empty;
@@ -296,6 +321,14 @@ namespace KeePass.App.Configuration
 		//	get { return m_bEditCancelConfirmation; }
 		//	set { m_bEditCancelConfirmation = value; }
 		// }
+
+		private bool m_bAdvATCmds = false;
+		[DefaultValue(false)]
+		public bool ShowAdvAutoTypeCommands
+		{
+			get { return m_bAdvATCmds; }
+			set { m_bAdvATCmds = value; }
+		}
 
 		private bool m_bSecDeskSound = true;
 		[DefaultValue(true)]

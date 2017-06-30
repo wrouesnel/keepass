@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.IO;
-using System.Diagnostics;
 
+using KeePass.App;
 using KeePass.Native;
 using KeePass.Resources;
 using KeePass.UI;
@@ -97,7 +98,7 @@ namespace KeePass.Forms
 		{
 			GlobalWindowManager.AddWindow(this);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = m_strTitle;
 
 			m_nIconDim = m_tvFolders.ItemHeight;
@@ -111,6 +112,7 @@ namespace KeePass.Forms
 			}
 
 			m_btnOK.Text = (m_bSaveMode ? KPRes.SaveCmd : KPRes.OpenCmd);
+			Debug.Assert(!m_lblHint.AutoSize); // For RTL support
 			m_lblHint.Text = m_strHint;
 
 			if(UIUtil.ColorsEqual(m_lblHint.ForeColor, Color.Black))
@@ -196,17 +198,10 @@ namespace KeePass.Forms
 			{
 				if((img.Width != m_nIconDim) || (img.Height != m_nIconDim))
 				{
-					Bitmap bmp = new Bitmap(m_nIconDim, m_nIconDim, PixelFormat.Format32bppArgb);
-					using(Graphics g = Graphics.FromImage(bmp))
-					{
-						g.Clear(Color.Transparent);
-						g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-						g.SmoothingMode = SmoothingMode.HighQuality;
-						g.DrawImage(img, new Rectangle(0, 0, m_nIconDim, m_nIconDim));
-					}
-
-					img.Dispose();
-					img = bmp;
+					Image imgScaled = GfxUtil.ScaleImage(img, m_nIconDim,
+						m_nIconDim, ScaleTransformFlags.UIIcon);
+					img.Dispose(); // Dispose unscaled version
+					img = imgScaled;
 				}
 			}
 		}

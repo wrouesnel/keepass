@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Xml.Serialization;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Xml.Serialization;
 
 using KeePassLib.Delegates;
 using KeePassLib.Interfaces;
@@ -55,20 +55,20 @@ namespace KeePassLib
 		/// e.g. 2.19 = 0x02130000.
 		/// It is highly recommended to use <c>FileVersion64</c> instead.
 		/// </summary>
-		public const uint Version32 = 0x021C0000;
+		public const uint Version32 = 0x02240000;
 
 		/// <summary>
 		/// Version, encoded as 64-bit unsigned integer
 		/// (component-wise, 16 bits per component).
 		/// </summary>
-		public const ulong FileVersion64 = 0x0002001C00000000UL;
+		public const ulong FileVersion64 = 0x0002002400000000UL;
 
 		/// <summary>
 		/// Version, encoded as string.
 		/// </summary>
-		public const string VersionString = "2.28";
+		public const string VersionString = "2.36";
 
-		public const string Copyright = @"Copyright © 2003-2014 Dominik Reichl";
+		public const string Copyright = @"Copyright © 2003-2017 Dominik Reichl";
 
 		/// <summary>
 		/// Product website URL. Terminated by a forward slash.
@@ -94,7 +94,8 @@ namespace KeePassLib
 		/// URL to a TXT file (eventually compressed) that contains information
 		/// about the latest KeePass version available on the website.
 		/// </summary>
-		public const string VersionUrl = "http://keepass.info/update/version2x.txt.gz";
+		public const string VersionUrl = "https://sslsites.de/keepass.info/update/version2x.txt.gz";
+		// public const string VersionUrl = "http://keepass.info/update/version2x.txt.gz";
 
 		/// <summary>
 		/// URL to the root path of the online KeePass help. Terminated by
@@ -106,10 +107,11 @@ namespace KeePassLib
 		/// A <c>DateTime</c> object that represents the time when the assembly
 		/// was loaded.
 		/// </summary>
-		public static readonly DateTime DtDefaultNow = DateTime.Now;
+		public static readonly DateTime DtDefaultNow = DateTime.UtcNow;
 
 		/// <summary>
-		/// Default number of master key encryption/transformation rounds (making dictionary attacks harder).
+		/// Default number of master key encryption/transformation rounds
+		/// (making dictionary attacks harder).
 		/// </summary>
 		public const ulong DefaultKeyEncryptionRounds = 6000;
 
@@ -294,6 +296,22 @@ namespace KeePassLib
 			set { m_bSearchInOther = value; }
 		}
 
+		private bool m_bSearchInStringNames = false;
+		[DefaultValue(false)]
+		public bool SearchInStringNames
+		{
+			get { return m_bSearchInStringNames; }
+			set { m_bSearchInStringNames = value; }
+		}
+
+		private bool m_bSearchInTags = true;
+		[DefaultValue(true)]
+		public bool SearchInTags
+		{
+			get { return m_bSearchInTags; }
+			set { m_bSearchInTags = value; }
+		}
+
 		private bool m_bSearchInUuids = false;
 		[DefaultValue(false)]
 		public bool SearchInUuids
@@ -310,15 +328,7 @@ namespace KeePassLib
 			set { m_bSearchInGroupNames = value; }
 		}
 
-		private bool m_bSearchInTags = true;
-		[DefaultValue(true)]
-		public bool SearchInTags
-		{
-			get { return m_bSearchInTags; }
-			set { m_bSearchInTags = value; }
-		}
-
-#if KeePassRT
+#if KeePassUAP
 		private StringComparison m_scType = StringComparison.OrdinalIgnoreCase;
 #else
 		private StringComparison m_scType = StringComparison.InvariantCultureIgnoreCase;
@@ -379,20 +389,21 @@ namespace KeePassLib
 			{
 				SearchParameters sp = new SearchParameters();
 
-				// sp.m_strText = string.Empty;
-				// sp.m_bRegex = false;
+				Debug.Assert(sp.m_strText.Length == 0);
+				Debug.Assert(!sp.m_bRegex);
 				sp.m_bSearchInTitles = false;
 				sp.m_bSearchInUserNames = false;
-				// sp.m_bSearchInPasswords = false;
+				Debug.Assert(!sp.m_bSearchInPasswords);
 				sp.m_bSearchInUrls = false;
 				sp.m_bSearchInNotes = false;
 				sp.m_bSearchInOther = false;
-				// sp.m_bSearchInUuids = false;
-				// sp.SearchInGroupNames = false;
+				Debug.Assert(!sp.m_bSearchInStringNames);
 				sp.m_bSearchInTags = false;
-				// sp.m_scType = StringComparison.InvariantCultureIgnoreCase;
-				// sp.m_bExcludeExpired = false;
-				// m_bRespectEntrySearchingDisabled = true;
+				Debug.Assert(!sp.m_bSearchInUuids);
+				Debug.Assert(!sp.m_bSearchInGroupNames);
+				// Debug.Assert(sp.m_scType == StringComparison.InvariantCultureIgnoreCase);
+				Debug.Assert(!sp.m_bExcludeExpired);
+				Debug.Assert(sp.m_bRespectEntrySearchingDisabled);
 
 				return sp;
 			}

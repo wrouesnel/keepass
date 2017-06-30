@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 using KeePass.App;
 using KeePass.App.Configuration;
@@ -33,6 +33,7 @@ using KeePass.UI;
 
 using KeePassLib;
 using KeePassLib.Security;
+using KeePassLib.Utility;
 
 using NativeLib = KeePassLib.Native.NativeLib;
 
@@ -73,18 +74,19 @@ namespace KeePass.Forms
 
 			DialogResult dr = dlg.ShowDialog();
 
-			try
-			{
-				if((h != IntPtr.Zero) && NativeMethods.IsWindowEx(h))
-					NativeMethods.SetForegroundWindowEx(h);
-			}
-			catch(Exception) { Debug.Assert(false); }
-
 			ProtectedString ps = dlg.SelectedCharacters;
 			string strRet = null;
 			if((dr == DialogResult.OK) && (ps != null)) strRet = ps.ReadString();
 
 			UIUtil.DestroyForm(dlg);
+
+			try
+			{
+				if(h != IntPtr.Zero)
+					NativeMethods.EnsureForegroundWindow(h);
+			}
+			catch(Exception) { Debug.Assert(false); }
+
 			return strRet;
 		}
 
@@ -127,13 +129,12 @@ namespace KeePass.Forms
 
 			m_nFormHeight = this.Height; // Before restoring the position/size
 
-			string strRect = Program.Config.UI.CharPickerRect;
-			if(strRect.Length > 0) UIUtil.SetWindowScreenRect(this, strRect);
-			m_strInitialFormRect = UIUtil.GetWindowScreenRect(this);
+			m_strInitialFormRect = UIUtil.SetWindowScreenRectEx(this,
+				Program.Config.UI.CharPickerRect);
 
 			m_fontChars = FontUtil.CreateFont("Tahoma", 8.25f, FontStyle.Bold);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.Text = KPRes.PickCharacters + " - " + PwDefs.ShortProductName;
 
 			m_secWord.Attach(m_tbSelected, OnSelectedTextChangedEx, true);
@@ -174,7 +175,7 @@ namespace KeePass.Forms
 		{
 			byte[] pbUtf8 = m_secWord.ToUtf8();
 			m_psSelected = new ProtectedString(true, pbUtf8);
-			Array.Clear(pbUtf8, 0, pbUtf8.Length);
+			MemUtil.ZeroByteArray(pbUtf8);
 		}
 
 		private void OnBtnCancel(object sender, EventArgs e)
@@ -184,7 +185,7 @@ namespace KeePass.Forms
 		private void CleanUpEx()
 		{
 			string strRect = UIUtil.GetWindowScreenRect(this);
-			if(strRect != m_strInitialFormRect)
+			if(strRect != m_strInitialFormRect) // Don't overwrite ""
 				Program.Config.UI.CharPickerRect = strRect;
 
 			m_secWord.Detach();
@@ -230,6 +231,8 @@ namespace KeePass.Forms
 
 			RemoveAllCharButtons();
 
+			bool bRtl = (this.RightToLeft == RightToLeft.Yes);
+
 			string strWord = ((m_psWord != null) ? m_psWord.ReadString() : string.Empty);
 			if(strWord.Length >= 1)
 			{
@@ -239,8 +242,10 @@ namespace KeePass.Forms
 				{
 					int w = ((nPnlWidth * (i + 1)) / strWord.Length) - x;
 
+					int rx = (bRtl ? (nPnlWidth - x - w) : x);
+
 					Button btn = new Button();
-					btn.Location = new Point(x, 0);
+					btn.Location = new Point(rx, 0);
 					btn.Size = new Size(w, nPnlHeight / 2 - 1);
 					btn.Font = m_fontChars;
 					btn.Tag = strWord[i];
@@ -252,8 +257,8 @@ namespace KeePass.Forms
 					Label lbl = new Label();
 					lbl.Text = (i + 1).ToString();
 					lbl.TextAlign = ContentAlignment.MiddleCenter;
-					lbl.Location = new Point(x, nPnlHeight / 2);
-					lbl.Size = new Size(w + 1, nPnlHeight / 2 - 3);
+					lbl.Location = new Point(rx - 1, nPnlHeight / 2);
+					lbl.Size = new Size(w + 2, nPnlHeight / 2 - 3);
 
 					m_lLabels.Add(lbl);
 					m_pnlSelect.Controls.Add(lbl);

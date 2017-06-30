@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Text;
 
 using KeePassLib.Utility;
 
@@ -31,7 +31,7 @@ namespace KeePassLib.Serialization
 		private Stream m_s;
 		// private Encoding m_enc; // See constructor
 
-		private string m_strReadExcp;
+		private string m_strReadExcp; // May be null
 		public string ReadExceptionText
 		{
 			get { return m_strReadExcp; }
@@ -67,7 +67,8 @@ namespace KeePassLib.Serialization
 				byte[] pb = MemUtil.Read(m_s, nCount);
 				if((pb == null) || (pb.Length != nCount))
 				{
-					if(m_strReadExcp != null) throw new IOException(m_strReadExcp);
+					if(!string.IsNullOrEmpty(m_strReadExcp))
+						throw new EndOfStreamException(m_strReadExcp);
 					else throw new EndOfStreamException();
 				}
 
@@ -76,7 +77,8 @@ namespace KeePassLib.Serialization
 			}
 			catch(Exception)
 			{
-				if(m_strReadExcp != null) throw new IOException(m_strReadExcp);
+				if(!string.IsNullOrEmpty(m_strReadExcp))
+					throw new IOException(m_strReadExcp);
 				else throw;
 			}
 		}

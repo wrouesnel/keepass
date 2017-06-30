@@ -1,3 +1,598 @@
+2017-06-09: 2.36
+- Added commands 'Find Duplicate Passwords' and 'Find Similar
+  Passwords' (in 'Edit' -> 'Show Entries'), which show entries
+  that are using the same or similar passwords
+- Added command 'Password Quality Report' (in 'Edit' -> 'Show
+  Entries'), which shows all entries and the estimated quality
+  of their passwords
+- Added option 'String name' in the 'Edit' -> 'Find' dialog
+  (for searching entries that have a specific custom string
+  field)
+- Added option for using a gray tray icon
+- Added {CMD:/.../} placeholder, which runs a command line
+- Added {T-CONV:/.../Raw/} placeholder, which inserts a text
+  without encoding it for the current context
+- Added optional 'Last Password Modification Time (Based on
+  History)' entry list column
+- The internal text editor now supports editing PS1 files
+- The position and size of the internal data viewer is now
+  remembered and restored
+- For various dialogs, the maximized state is now remembered
+  and restored
+- Added configuration option for specifying an expiry date for
+  master keys
+- Added configuration option for specifying disallowed
+  auto-type target windows
+- Added workaround for Edge throwing away all keyboard input
+  for a short time after its activation
+- Added workaround for Mono not properly rendering bold and
+  italic text in rich text boxes
+- TrlUtil now performs a case-sensitive word validation
+
+- The password input controls in the IO connection dialog and
+  the proxy dialog now are secure edit controls
+- The icon of the 'Save' command in the main menu is now grayed
+  out when there are no database changes (like the toolbar
+  button)
+- Auto-Type: improved support for target applications that
+  redirect the focus immediately
+- Auto-Type: improved compatibility with VMware vSphere client
+- When an error occurs during auto-type, KeePass is now brought
+  to the foreground before showing an error message box
+- Entries in groups where searching is disabled (e.g. the
+  recycle bin group) are now ignored by the commands that show
+  expired entries
+- Improved scrolling when moving entries while grouping in the
+  entry list is on
+- Improved support for right-to-left writing systems
+- Improved application and system tray icon handling
+- Updated low resolution ICO files (for Mono development)
+- Moved single-click tray icon action option from the
+  'Integration' tab to the 'Interface' tab of the options
+  dialog
+- Synchronization file path comparisons are case-insensitive
+  now
+- Improved workaround for Mono clipboard bug (improved
+  performance and window detection; the workaround is now
+  applied only if 'xsel' and 'xdotool' are installed)
+- Enhanced PrepMonoDev.sh script
+- KPScript: times in group and entry lists now contain a time
+  zone identifier (typically 'Z' for UTC)
+- Various code optimizations
+- Minor other improvements
+
+- The drop-down menu commands in the entry editing dialog for
+  setting the expiry date now work as expected
+
+2017-01-09: 2.35
+- New KDBX 4 file format, which supports various new features
+  (listed below; e.g. Argon2)
+- Added Argon2 key derivation function (it can be activated in
+  the database settings dialog)
+- Improved header and data authentication in KDBX 4 files
+  (using HMAC-SHA-256, Encrypt-then-MAC scheme)
+- Added ChaCha20 (RFC 7539) encryption algorithm (it can be
+  activated as KDBX file encryption algorithm in the database
+  settings dialog; furthermore, it supersedes Salsa20 as
+  default for generating the inner random stream of KDBX 4
+  files)
+- Added support for opening entry URLs with Firefox or Opera in
+  private mode via the context menu -> 'URL(s)' -> 'Open with
+  ... (Private)'
+- Added URL override suggestions for Firefox and Opera in
+  private mode in the URL override suggestions drop-down list
+  in the entry dialog
+- Added optional built-in global URL overrides for opening
+  HTTP/HTTPS URLs with Firefox or Opera in private mode
+- Added {PICKFIELD} placeholder, which shows a dialog to pick a
+  field whose value will be inserted
+- Added option 'Hide "Close Database" toolbar button when at
+  most one database is opened' (turned on by default)
+- Added option 'Show additional auto-type menu commands', which
+  can be turned on to show menu commands for performing entry
+  auto-type with some specific sequences
+- Added menu command 'Selected Entry's Group' (with keyboard
+  shortcut Ctrl+G) in 'Edit' -> 'Show Entries' (and a context
+  menu equivalent 'Show Parent Group' in 'Selected Entries'),
+  which opens the parent group of the currently selected entry
+  and selects the entry again
+- Added menu commands in 'Edit' -> 'Show Entries' to show
+  entries that expire in a specific number of days (1, 2, 3) or
+  weeks (1, 2, 4, 8) or in the future
+- Added configuration option that specifies the number of days
+  within which entries are considered to expire 'soon' (the
+  default is 7)
+- Added option for changing the alternate item background color
+- When the option 'Remember key sources' is enabled, KeePass
+  now also remembers whether a master password has been used
+- Added option 'Force changing the master key the next time
+  (once)' (in 'File' -> 'Database Settings' -> tab 'Advanced')
+- Added parameters 'Window style' and 'Verb' for the 'Execute
+  command line / URL' trigger action
+- Added support for importing mSecure 3.5.5 CSV files
+- Added support for importing Password Saver 4.1.2 XML files
+- Added support for importing Enpass 5.3.0.1 TXT files
+- Enhanced SplashID CSV import (added support for the old
+  version 3.4, added mappings for types of the latest version,
+  groups are now created only for categories, and types are
+  imported as tags)
+- LastPass import: added support for CSV files exported by the
+  LastPass Chrome extension, which encodes some special
+  characters as XML entities
+- Added 'KeePass KDBX (2.34, Old Format)' export module
+- Export using XSL transformation: added support for the
+  'xsl:output' element in XSL files
+- If the global auto-type hot key is Ctrl+Alt+A and the current
+  input locale is Polish, KeePass now shows a warning dialog
+  (telling the user that Ctrl+Alt+A is in conflict with a
+  system key combination producing a character)
+- Added Alt+X Unicode character conversion support in rich text
+  boxes on Unix-like systems
+- For development snapshots, the 'About' dialog now shows the
+  snapshot version (in the form 'YYMMDD')
+- Plugins can provide other key derivation functions now
+- The header of KDBX 4 files is extensible by plugins
+- Enhanced support for developing encryption algorithm plugins
+- Plugins can now store custom data in groups and entries
+- Plugin data stored in the database, a group or an entry can
+  now be inspected (and deleted) in the database maintenance
+  dialog, the group dialog and the entry dialog, respectively
+- For plugins: file closing events now contain information
+  about whether KeePass is exiting, locking or performing a
+  trigger action
+- Added workaround for .NET handle cast overflow bug in
+  InputLanguage.Culture
+- Added workaround for Mono ignoring the Ctrl+I shortcut
+- Added workaround for Mono clipboard bug
+- Added workaround for Mono not focusing the default control in
+  the entry editing dialog
+- Added workaround for a Mono timer bug that caused high CPU
+  load while showing a file save confirmation dialog
+- Added Mono workaround: when running on Mac OS X, KeePass now
+  does not try to instantiate a tray icon anymore
+- Added workaround for XDoTool sending diacritic characters in
+  incorrect case
+- TrlUtil now recommends to clear the 'Unused Text' tab
+
+- Improved behavior when searching entries with exclusions
+  (terms prefixed with '-')
+- Improved support for auto-typing into target windows using
+  different keyboard layouts
+- Auto-Type: improved support for keyboard layouts with keys
+  where Shift, Caps Lock and no modifier result in 3 different
+  characters
+- Auto-Type: improved support for spacing modifier letters
+  (U+02B0 to U+02FF)
+- Global auto-type now works with target windows having empty
+  titles
+- When copying entries to the clipboard, the data package now
+  includes custom icons used by the entries
+- Unified behavior when drag&dropping a field containing a
+  placeholder
+- Improved entry edit confirmation dialog
+- If the screen height is insufficient to display a dialog, the
+  dialog's banner (if the dialog has one) is now removed to
+  save some space
+- Some tooltips are now displayed for a longer time
+- A new entry created using a template now does not include the
+  history of the template anymore
+- For empty RTF attachments, the internal data editor now by
+  default uses the font that is specified for TXT files
+- Internal data editor: added support for changing the format
+  of mixed-format selections
+- Internal data viewer and editor: null characters ('\0', not
+  '0') in texts are now automatically replaced by spaces (like
+  Notepad on Windows 10)
+- Improved encoding signature handling for conversions during
+  text attachment imports (via the 'Text Encoding' dialog)
+- File transactions are not used anymore for files that have a
+  reparse point (e.g. symbolic links)
+- Improved XSL stylesheets for KDBX XML files
+- The internal window manager is now thread-safe
+- Improved date/time handling
+- Improved button image disposal
+- When synchronizing two databases, custom data (by plugins) is
+  now merged
+- When opening a database file, corrupted icon indices are now
+  automatically replaced by default values
+- Added some more entropy sources for the seed of the
+  cryptographically secure pseudo-random number generator
+  (environment variables, command line, full operating system
+  version, current culture)
+- ChaCha20 is now used during password generation (instead of
+  Salsa20)
+- ChaCha20 is now used as fallback process memory encryption
+  algorithm (instead of Salsa20)
+- When the encryption algorithm for a database file is unknown,
+  the error message now shows the UUID of the algorithm
+- In KDBX 4, header field lengths are now 4 bytes wide
+- In KDBX 4, entry attachments are now stored in an inner,
+  binary header (encrypted, possibly compressed), before the
+  XML part; this reduces the database file size and improves
+  the loading/saving performance
+- In KDBX 4, the inner random stream cipher ID and key (to
+  support process memory protection) are now stored in the
+  inner header instead of in the outer header
+- KPScript: the 'ChangeMasterKey' command now also updates the
+  master key change date
+- TrlUtil: improved validation warning dialogs
+- The MSI file now requires any .NET Framework version, not a
+  specific one
+- The MSI file is now built using Visual Studio 2015
+- Various code optimizations
+- Minor other improvements
+
+- When executing a {HMACOTP} placeholder, the last modification
+  time of the corresponding entry is now updated
+- Key files containing exactly 64 alphanumeric characters are
+  now loaded as intended
+
+2016-06-11: 2.34
+- The version information file (which the optional update check
+  downloads to see if there exists a newer version) is now
+  digitally signed (using RSA-4096 / SHA-512); furthermore, it
+  is downloaded over HTTPS
+- Added option 'Lock workspace when minimizing main window to
+  tray'
+- Added option 'Esc minimizes to tray instead of locking the
+  workspace'
+- Added Ctrl+Q shortcut for closing KeePass (as alternative to
+  Alt+F4)
+- Added UIFlags bit for disabling the 'Check for Updates' menu
+  item
+- The installers (regular and MSI) now create an empty
+  'Plugins' folder in the application directory, and the
+  portable package now also contains such a folder
+- Plugins: added support for digitally signed version
+  information files
+
+- Plugins are now loaded only directly from the application
+  directory and from any subdirectory of the 'Plugins' folder
+  in the application directory
+- Improved startup performance (by filtering plugin candidates)
+- When closing a database, KeePass now searches and deletes any
+  temporary files that may have been created and forgotten by
+  MSHTML when printing failed
+- CHM help file: improved high DPI support
+- Various code optimizations
+- Minor other improvements
+
+2016-05-07: 2.33
+- Added commands in the group context menu (under 'Rearrange'):
+  'Expand Recursively' and 'Collapse Recursively'
+- Added option 'When selecting an entry, automatically select
+  its parent group, too' (turned on by default)
+- Added placeholders for data of the group that is currently
+  selected in the main window: {GROUP_SEL}, {GROUP_SEL_PATH}
+  and {GROUP_SEL_NOTES}
+- While importing/synchronizing, indeterminate progress is now
+  displayed on the taskbar button (on Windows 7 and higher)
+- Added optional parameters 'Filter - Group' and 'Filter - Tag'
+  for the 'Export active database' trigger action
+- Pressing the Escape key in the main window now locks the
+  workspace (independent of the current database locking state,
+  in contrast to Ctrl+L)
+- Added option 'Extra-safe file transactions' in 'Tools' ->
+  'Options' -> tab 'Advanced'
+- Added customization option to specify how often the master
+  key dialog appears when entering incorrect master keys
+- Plugins: added event 'FormLoadPost' for the main window
+- KPScript: the 'GetEntryString' command now supports the
+  '-Spr' option, which causes KPScript to Spr-compile the field
+  value (i.e. placeholders are replaced, field references are
+  resolved, environment variables are inserted, etc.)
+
+- Improved database synchronization performance
+- Improved object reordering during a database synchronization
+  for new and relocated groups/entries
+- Improved synchronization of deleted objects information
+- Improved database synchronization to prevent implicit object
+  deletions
+- HTML export/printing: the notes column now is twice as wide
+  as the other columns
+- When entering a Spr-variant password in the entry dialog, the
+  quality estimation is now disabled
+- Group tooltips are now displayed for about 30 seconds
+- The root group is now always expanded when opening a database
+- Improved private mode browser detection
+- Improved DPI awareness declaration (on Windows 10 and higher)
+- Improved regular expression searching performance in usual
+  use cases
+- Improved natural string comparison performance (on Unix-like
+  systems)
+- Improved mnemonic characters in the 'Rearrange' menus
+- Upgraded installer
+- Various UI text improvements
+- Various code optimizations
+- Minor other improvements
+
+2016-03-09: 2.32
+- The quick search box (in the toolbar of the main window) now
+  supports searching using a regular expression; in order to
+  indicate that the search text is a regular expression,
+  enclose it in '//'; for example, performing a quick search
+  for '//Michael|Adam//' shows all entries containing 'Michael'
+  or 'Adam'
+- Added 'Advanced' tab in the 'Open From URL' dialog (easily
+  extensible by plugins); added options: timeout, pre-
+  authenticate, HTTP/HTTPS/WebDAV user agent and 100-Continue
+  behavior, FTP passive mode
+- Added per-user Start Menu Internet Application detection
+- When selecting an entry in the main entry list, its parent
+  group is now selected automatically in the group tree view
+- Auto-Type matching: added option 'Expired entries can match'
+  (turned off by default, i.e. expired entries are ignored)
+- Added option 'Always show global auto-type entry selection
+  dialog' (to show the dialog even when no or one entry is
+  found for the currently active target window; turned off by
+  default)
+- Added {GROUP_NOTES} placeholder
+- Added support for importing nPassword 1.0.2.41 NPW files
+- In triggers and KPScript, an import/export module can now be
+  specified both using its display name and its format name
+- When running under .NET 4.5 or higher, secure connections
+  (e.g. for WebDAV) now support TLS 1.1 and TLS 1.2 (in
+  addition to SSL 3 and TLS 1.0)
+- Added Mono workaround: when running on the Unity or Pantheon
+  desktop, KeePass now does not try to instantiate a tray icon
+  anymore; if you want a tray icon on Unity/Pantheon, use the
+  application indicator plugin
+- Added workaround for Mono not implementing the property
+  SystemInformation.SmallIconSize for Mac OS X systems
+- Added command line parameter '-wa-disable:' for disabling
+  specific Mono workarounds (IDs separated by commas)
+- KPScript: if the value of a '-ref-*:' parameter is enclosed
+  in '//', it is now treated as a regular expression, which
+  must occur in the entry field for an entry to match
+- KPScript: .NET 4.0/4.5 is now preferred, if installed
+- KPScript: enhanced high DPI support
+
+- Auto-Type: improved compatibility with target windows that
+  handle activation slowly and ignore any input until being
+  ready (like Microsoft Edge)
+- Auto-Type: improved sending of characters that are typically
+  realized with the AltGr key
+- When editing a custom entry string, the value text box now
+  has the initial focus
+- Improved image/icon shrinking
+- Improved icon recoloring on high DPI resolutions
+- Changed some ICO files such that higher resolution images are
+  used
+- Changed some PNG files to workaround the image DPI scaling
+  behavior on Windows XP
+- Improved new-line filtering in the main entry view
+- When trying to use the Windows user account as part of a
+  composite master key fails, a more detailed error message is
+  displayed now
+- The 'About' dialog now indicates whether the current build is
+  a development snapshot
+- Changed code signing certificate
+- Upgraded installer
+- Various code optimizations
+- Minor other improvements
+
+- After an incomplete drag&drop operation over the group tree
+  view, the previous group selection is now restored
+
+2016-01-09: 2.31
+- Added menu/toolbar styles, freely selectable in 'Tools' ->
+  'Options' -> tab 'Interface'; available styles are 'Windows
+  10', 'Windows 8.1', 'KeePass - Gradient', '.NET/Office -
+  Professional' and 'System - Classic'; by default KeePass uses
+  the style most similar to the one of the current operating
+  system
+- Refined application icons (thanks to Victor Andreyenkov)
+- Auto-Type: new target window classification method, which
+  improves compatibility with target windows hosted within
+  other windows (e.g. a PuTTY window within SuperPuTTY/MTPuTTY)
+- Auto-Type: added workaround for the default Ctrl+Alt behavior
+  of KiTTY variants (which differs from Windows' behavior)
+- Before clearing the clipboard, KeePass now first copies a
+  non-sensitive text into it; this ensures that no sensitive
+  information remains in the clipboard even when clearing is
+  prevented by the environment (e.g. when running in a virtual
+  machine, when using a clipboard extension utility, ...)
+- Added support for opening entry URLs with Internet Explorer
+  or Google Chrome in private mode via the context menu ->
+  'URL(s)' -> 'Open with ... (Private)'
+- Added URL override suggestions for Internet Explorer and
+  Google Chrome in private mode in the URL override suggestions
+  drop-down list in the entry dialog
+- Added optional built-in global URL overrides for opening
+  HTTP/HTTPS URLs with Internet Explorer or Google Chrome in
+  private mode
+- Added Ctrl+K shortcut for the 'Duplicate Entry' command
+- Mozilla Bookmarks HTML import: added support for importing
+  tags
+- Added support for exporting to Mozilla Bookmarks HTML files
+- Windows/IE favorites export: entry fields are Spr-compiled
+  now, and entries with cmd:// URLs are now exported as LNK
+  files
+- HTML export/printing: added support for UUIDs, added
+  horizontal lines between entries in details mode, added
+  background color for group headings, long field names are
+  hyphenated now, and long field data now breaks and wraps onto
+  the next line
+- Plugins: added possibility to configure file transactions for
+  each URI scheme
+- Plugins: added possibility to provide custom 'Save As'
+  dialogs more easily
+- Converted some PNG images as a workaround for a problem in
+  Cairo/LibPNG on Unix-like systems
+- As a workaround for a weakness in Mono's FileDialog, before
+  showing such a dialog on Unix-like systems KeePass now tries
+  to load the file '~/.recently-used' and deletes it, if it is
+  not a valid XML file
+- KPScript: added support for specifying the master password in
+  encrypted form using the '-pw-enc:' command line parameter
+  (exactly like in KeePass, compatible with the {PASSWORD_ENC}
+  placeholder)
+- KPScript: the 'Export' command now supports the optional
+  '-GroupPath:' parameter (to export a specific group instead
+  of the whole database)
+- KPScript: the 'GetEntryString' command now supports the
+  '-FailIfNoEntry' option
+- KPScript: added '-refx-Expires' and '-refx-Expired' entry
+  identification parameters
+- KPScript: the 'Import' command now prints more specific error
+  messages
+- All KeePass program binaries are now dual signed using SHA-1
+  and SHA-256
+
+- Auto-Type: improved keyboard layout handling when the target
+  window changes during an auto-type process
+- Auto-Type: improved compatibility with Remote Desktop
+  Connection client and VirtualBox
+- Improved icon recoloring
+- Improved printing of dates/times and tags
+- The password generator based on a character set now ensures
+  that the generated password is Spr-invariant
+- Password generator based on a pattern or a custom algorithm:
+  when a Spr-variant password is generated, a confirmation
+  dialog for accepting this password is displayed
+- If the 'Save Database' policy prevents saving, the auto-save
+  option is now ignored
+- Improved .NET Framework version detection
+- PLGX debugging: when the command line option '-debug' is
+  passed and a PLGX plugin fails to compile, the output of all
+  tried compilers is saved to a temporary file
+- Improved file transaction creation time handling on Unix-like
+  systems
+- Improved compatibility with Mono on BSD systems
+- Enhanced PrepMonoDev.sh script for compatibility with Mono
+  4.x
+- Removed KeePassLibSD sub-project (a KeePass library for
+  Pocket PC / Windows Mobile) from the main solution
+- Upgraded installer
+- Various code optimizations
+- Minor other improvements
+
+- When running under Mono (Linux, Mac OS X, ...), two options
+  related to window minimization are disabled now (because they
+  do not work properly due to a Mono bug)
+
+2015-08-09: 2.30
+- When opening a database via an URL fails, the error message
+  dialog now has a button 'Specify different server
+  credentials' (on Windows Vista and higher)
+- Added support for opening entry URLs with Microsoft Edge via
+  the context menu -> 'URL(s)' -> 'Open with Edge'
+- Added URL override suggestion for Microsoft Edge in the URL
+  override suggestions drop-down list in the entry dialog
+- Added optional built-in global URL overrides for opening
+  HTTP/HTTPS URLs with Microsoft Edge
+- When clicking on a group link in the entry view, KeePass now
+  ensures that the group is visible in the group tree
+- The main window is now moved onto the primary screen when it
+  is restored outside all screens
+- KDBX loader: added support for non-empty protected binary
+  value reference elements
+- Plugins: added two auto-type sequence query events
+- Added workaround for Mono drawing bug when scrolling a rich
+  text box
+- When running under Mono, some automatic locking options are
+  now disabled (because Mono doesn't implement the required
+  events)
+- The installer now prevents running the installer while it is
+  already running
+- KPScript: added '-GroupPath:' parameter (for specifying the
+  full path of a group)
+- KPScript: the 'MoveEntry' command now also supports the
+  '-GroupName:' parameter (as alternative to '-GroupPath:')
+- KPScript: added support for specifying the path of an XSL
+  stylesheet file using the command line parameter '-XslFile:'
+- KPScript: the 'ListGroups' command now also outputs the
+  parent group UUID for each group
+- KPScript: the parameters for specifying new field data (for
+  the 'AddEntry' and the 'EditEntry' command) now support
+  escape sequences (e.g. '\n' is replaced by a new-line
+  character)
+
+- The 'Synchronize' file dialog now shows only KDBX files by
+  default
+- In the 'Attachments (Count)' column, only non-zero counts are
+  shown now
+- Improved MRU item refreshes
+- The entry string dialog now supports changing the case of a
+  string name
+- The entry string dialog now does not allow adding a string
+  whose name differs from another existing string name in this
+  entry only by case
+- The entry view in the main window is now updated immediately
+  after pressing Ctrl+H or Ctrl+J
+- The KDB import module now tries to round any invalid
+  date/time to the nearest valid date/time
+- XML serializers are now loaded/created at KeePass startup in
+  order to avoid a problem when shutting down Windows and
+  KeePass.XmlSerializers.dll not being present
+- Changed tab bar behavior in the options dialog to avoid a tab
+  content cropping issue caused by plugins
+- Improved workaround for Mono splitter bug
+- Upgraded installer
+- Various performance improvements
+- Various code optimizations
+- Minor other improvements
+
+2015-04-10: 2.29
+- Added high resolution icons
+- Added support for high resolution custom icons
+- Added option in the proxy configuration dialog to use the
+  user's default credentials (provided by the system)
+- {FIREFOX} placeholder: if no regular Firefox is installed,
+  KeePass now looks for Firefox ESR
+- {PICKCHARS} placeholder: the Conv-Fmt option now supports all
+  combinations of '0', 'A', 'a' and '?'; '?' skips a combobox
+  item
+- Added {BEEP X Y} auto-type command (where X is the frequency
+  in hertz and Y the duration in milliseconds)
+- Added optional 'Attachments (Count)' entry list column
+- Added Ctrl+Insert shortcut as alternative for Ctrl+C in the
+  entry list of the main window
+- Added shortcut keys for 'Copy Entries' (Ctrl+Shift+C) and
+  'Paste Entries' (Ctrl+Shift+V)
+- Added some access keys in various dialogs
+- In the field reference dialog, the field in which the
+  reference will be inserted is now selected as source field by
+  default
+- Added UUID uniqueness check
+- Added support for importing Passphrase Keeper 2.60 HTML files
+  (in addition to the already supported 2.50 and 2.70 formats)
+- The path of the local configuration file can now be changed
+  using the '-cfg-local:' command line parameter
+- Plugins can now access the KeePass resources (images, icons,
+  etc.) through the IPluginHost interface
+- Added a few workarounds for external window manipulations
+  before the main window has been fully constructed
+- Added workaround for .NET gradient drawing bug; 'Blue Carbon'
+  dialog banners are now drawn correctly on high DPI
+- Added workaround for Mono file version information block
+  generation bug
+- KPScript: added 'EstimateQuality' command (to estimate the
+  quality of a specified password)
+- All KeePass program binaries are now digitally signed (thanks
+  to Certum/Unizeto)
+
+- In the master key creation dialog, the 'Create' and 'Browse'
+  buttons are now disabled when a key provider is selected
+- Changed behavior of the 'Use system proxy settings' option
+  (KeePass now directly gets the system proxy settings, not the
+  .NET default proxy settings)
+- Improved focus restoration after closing the character
+  picking dialog
+- Removed 'O' and 'C' access keys from 'OK' and 'Cancel'
+  buttons (instead, press Enter for 'OK' and Esc for 'Cancel')
+- Improved remembering of splitter positions
+- Improved assignments of check mark images to menu items
+- Improved behavior when synchronizing a local EFS-encrypted
+  database file with a local database file
+- On Unix-like systems, hot key boxes now show 'External'
+  instead of 'None'
+- Various code optimizations
+- Minor other improvements
+
+- AltGr+E (i.e. Ctrl+Alt+E) does not focus the quick search box
+  anymore
+
 2014-10-08: 2.28
 - Enhanced high DPI support
 - Added trigger action 'Show message box' (which can abort the

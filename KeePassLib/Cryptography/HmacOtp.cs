@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,13 +19,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
 using System.Globalization;
+using System.Text;
+
+#if !KeePassUAP
+using System.Security.Cryptography;
+#endif
 
 using KeePassLib.Utility;
 
-#if (!KeePassLibSD && !KeePassRT)
+#if !KeePassLibSD
 namespace KeePassLib.Cryptography
 {
 	/// <summary>
@@ -40,7 +43,7 @@ namespace KeePassLib.Cryptography
 			uint uCodeDigits, bool bAddChecksum, int iTruncationOffset)
 		{
 			byte[] pbText = MemUtil.UInt64ToBytes(uFactor);
-			Array.Reverse(pbText); // Big-Endian
+			Array.Reverse(pbText); // To big-endian
 
 			HMACSHA1 hsha1 = new HMACSHA1(pbSecret);
 			byte[] pbHash = hsha1.ComputeHash(pbText);

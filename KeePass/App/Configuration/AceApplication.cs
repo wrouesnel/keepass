@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -172,6 +172,14 @@ namespace KeePass.App.Configuration
 			set { m_bTransactedWrites = value; }
 		}
 
+		private bool m_bFileTxExtra = false;
+		[DefaultValue(false)]
+		public bool FileTxExtra
+		{
+			get { return m_bFileTxExtra; }
+			set { m_bFileTxExtra = value; }
+		}
+
 		private bool m_bFileLocks = false;
 		[DefaultValue(false)]
 		public bool UseFileLocks
@@ -220,6 +228,14 @@ namespace KeePass.App.Configuration
 				if(value == null) throw new ArgumentNullException("value");
 				m_strPluginCachePath = value;
 			}
+		}
+
+		private int m_iExpirySoonDays = 7;
+		[DefaultValue(7)]
+		public int ExpirySoonDays
+		{
+			get { return m_iExpirySoonDays; }
+			set { m_iExpirySoonDays = value; }
 		}
 
 		public string GetWorkingDirectory(string strContext)

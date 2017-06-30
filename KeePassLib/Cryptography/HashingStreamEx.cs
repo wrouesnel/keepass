@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,10 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Security.Cryptography;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
+
+#if !KeePassUAP
+using System.Security.Cryptography;
+#endif
 
 using KeePassLib.Utility;
 
@@ -30,8 +33,8 @@ namespace KeePassLib.Cryptography
 {
 	public sealed class HashingStreamEx : Stream
 	{
-		private Stream m_sBaseStream;
-		private bool m_bWriting;
+		private readonly Stream m_sBaseStream;
+		private readonly bool m_bWriting;
 		private HashAlgorithm m_hash;
 
 		private byte[] m_pbFinalHash = null;
@@ -64,7 +67,7 @@ namespace KeePassLib.Cryptography
 		public override long Position
 		{
 			get { return m_sBaseStream.Position; }
-			set { throw new NotSupportedException(); }
+			set { Debug.Assert(false); throw new NotSupportedException(); }
 		}
 
 		public HashingStreamEx(Stream sBaseStream, bool bWriting, HashAlgorithm hashAlgorithm)
@@ -87,43 +90,39 @@ namespace KeePassLib.Cryptography
 			if(m_hash == null) { Debug.Assert(false); return; }
 
 			// Validate hash algorithm
-			if((!m_hash.CanReuseTransform) || (!m_hash.CanTransformMultipleBlocks) ||
-				(m_hash.InputBlockSize != 1) || (m_hash.OutputBlockSize != 1))
+			if(!m_hash.CanReuseTransform || !m_hash.CanTransformMultipleBlocks)
 			{
-#if DEBUG
-				MessageService.ShowWarning("Broken HashAlgorithm object in HashingStreamEx.");
-#endif
+				Debug.Assert(false);
 				m_hash = null;
 			}
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if(disposing)
+			{
+				if(m_hash != null)
+				{
+					try
+					{
+						m_hash.TransformFinalBlock(MemUtil.EmptyByteArray, 0, 0);
+
+						m_pbFinalHash = m_hash.Hash;
+					}
+					catch(Exception) { Debug.Assert(false); }
+
+					m_hash = null;
+				}
+
+				m_sBaseStream.Close();
+			}
+
+			base.Dispose(disposing);
 		}
 
 		public override void Flush()
 		{
 			m_sBaseStream.Flush();
-		}
-
-#if KeePassRT
-		protected override void Dispose(bool disposing)
-		{
-			if(!disposing) return;
-#else
-		public override void Close()
-		{
-#endif
-			if(m_hash != null)
-			{
-				try
-				{
-					m_hash.TransformFinalBlock(new byte[0], 0, 0);
-
-					m_pbFinalHash = m_hash.Hash;
-				}
-				catch(Exception) { Debug.Assert(false); }
-
-				m_hash = null;
-			}
-
-			m_sBaseStream.Close();
 		}
 
 		public override long Seek(long lOffset, SeekOrigin soOrigin)

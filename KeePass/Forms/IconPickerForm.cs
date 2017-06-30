@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.IO;
 
 using KeePass.App;
 using KeePass.Resources;
@@ -80,7 +80,7 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 
 			FontUtil.AssignDefaultBold(m_radioStandard);
 			FontUtil.AssignDefaultBold(m_radioCustom);
@@ -273,15 +273,20 @@ namespace KeePass.Forms
 						// msSource.Close();
 
 						Image img = GfxUtil.LoadImage(pb);
+						if(img == null) throw new FormatException();
+
+						int wMax = PwCustomIcon.MaxWidth;
+						int hMax = PwCustomIcon.MaxHeight;
 						MemoryStream ms = new MemoryStream();
-						if((img.Width == 16) && (img.Height == 16))
+						if((img.Width <= wMax) && (img.Height <= hMax))
 							img.Save(ms, ImageFormat.Png);
 						else
 						{
-							// Image imgNew = new Bitmap(img, new Size(16, 16));
-							Bitmap imgSc = UIUtil.CreateScaledImage(img, 16, 16);
-							imgSc.Save(ms, ImageFormat.Png);
-							imgSc.Dispose();
+							// Image imgSc = new Bitmap(img, new Size(wMax, hMax));
+							using(Image imgSc = GfxUtil.ScaleImage(img, wMax, hMax))
+							{
+								imgSc.Save(ms, ImageFormat.Png);
+							}
 						}
 						img.Dispose();
 
@@ -425,7 +430,7 @@ namespace KeePass.Forms
 			{
 				PwUuid pwUuid = (lvi.Tag as PwUuid);
 				if(pwUuid == null) { Debug.Assert(false); return; }
-				Image img = m_pwDatabase.GetCustomIcon(pwUuid);
+				Image img = m_pwDatabase.GetCustomIcon(pwUuid, -1, -1);
 				if(img == null) { Debug.Assert(false); return; }
 
 				// string strExt = UrlUtil.GetExtension(strFile);

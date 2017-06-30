@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,13 +19,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
+using System.Text;
 
-using KeePass.App;
 using KeePass.Resources;
 
+#if !KeePassUAP
+using KeePass.Util.Spr;
+#endif
+
+using KeePassLib;
 using KeePassLib.Cryptography.PasswordGenerator;
+using KeePassLib.Security;
 using KeePassLib.Utility;
 
 namespace KeePass.Util
@@ -59,7 +64,7 @@ namespace KeePass.Util
 
 			AddStdPattern(KPRes.RandomMacAddress, @"HH\-HH\-HH\-HH\-HH\-HH");
 
-			string strHex = KPRes.HexKey;
+			string strHex = KPRes.HexKeyEx;
 			AddStdPattern(strHex.Replace(@"{PARAM}", "40"), @"h{10}");
 			AddStdPattern(strHex.Replace(@"{PARAM}", "128"), @"h{32}");
 			AddStdPattern(strHex.Replace(@"{PARAM}", "256"), @"h{64}");
@@ -124,5 +129,57 @@ namespace KeePass.Util
 
 			return StrUtil.CompareNaturally(a.Name, b.Name);
 		}
+
+#if !KeePassUAP
+		internal static ProtectedString GenerateAcceptable(PwProfile prf,
+			byte[] pbUserEntropy, PwEntry peOptCtx, PwDatabase pdOptCtx)
+		{
+			bool b = false;
+			return GenerateAcceptable(prf, pbUserEntropy, peOptCtx, pdOptCtx, ref b);
+		}
+
+		internal static ProtectedString GenerateAcceptable(PwProfile prf,
+			byte[] pbUserEntropy, PwEntry peOptCtx, PwDatabase pdOptCtx,
+			ref bool bAcceptAlways)
+		{
+			ProtectedString ps = ProtectedString.Empty;
+			SprContext ctx = new SprContext(peOptCtx, pdOptCtx,
+				SprCompileFlags.NonActive, false, false);
+
+			bool bAcceptable = false;
+			while(!bAcceptable)
+			{
+				bAcceptable = true;
+
+				PwGenerator.Generate(out ps, prf, pbUserEntropy, Program.PwGeneratorPool);
+				if(ps == null) { Debug.Assert(false); ps = ProtectedString.Empty; }
+
+				if(bAcceptAlways) { }
+				else
+				{
+					string str = ps.ReadString();
+					string strCmp = SprEngine.Compile(str, ctx);
+
+					if(str != strCmp)
+					{
+						if(prf.GeneratorType == PasswordGeneratorType.CharSet)
+							bAcceptable = false; // Silently try again
+						else
+						{
+							string strText = str + MessageService.NewParagraph +
+								KPRes.GenPwSprVariant + MessageService.NewParagraph +
+								KPRes.GenPwAccept;
+
+							if(!MessageService.AskYesNo(strText, null, false))
+								bAcceptable = false;
+							else bAcceptAlways = true;
+						}
+					}
+				}
+			}
+
+			return ps;
+		}
+#endif
 	}
 }

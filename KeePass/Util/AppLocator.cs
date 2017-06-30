@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 using System.Diagnostics;
 
 using Microsoft.Win32;
@@ -40,6 +41,7 @@ namespace KeePass.Util
 		private const int BrwOpera = 2;
 		private const int BrwChrome = 3;
 		private const int BrwSafari = 4;
+		private const int BrwEdge = 5;
 
 		private static Dictionary<int, string> m_dictPaths =
 			new Dictionary<int, string>();
@@ -67,6 +69,39 @@ namespace KeePass.Util
 		public static string SafariPath
 		{
 			get { return GetPath(BrwSafari, FindSafari); }
+		}
+
+		/// <summary>
+		/// Edge executable cannot be run normally.
+		/// </summary>
+		public static string EdgePath
+		{
+			get { return GetPath(BrwEdge, FindEdge); }
+		}
+
+		private static bool? m_obEdgeProtocol = null;
+		public static bool EdgeProtocolSupported
+		{
+			get
+			{
+				if(m_obEdgeProtocol.HasValue)
+					return m_obEdgeProtocol.Value;
+
+				bool b = false;
+				RegistryKey rk = null;
+				try
+				{
+					rk = Registry.ClassesRoot.OpenSubKey(
+						"microsoft-edge", false);
+					if(rk != null)
+						b = (rk.GetValue("URL Protocol") != null);
+				}
+				catch(Exception) { Debug.Assert(NativeLib.IsUnix()); }
+				finally { if(rk != null) rk.Close(); }
+
+				m_obEdgeProtocol = b;
+				return b;
+			}
 		}
 
 		private delegate string FindAppDelegate();
@@ -101,6 +136,7 @@ namespace KeePass.Util
 				AppLocator.ChromePath, ctx);
 			str = AppLocator.ReplacePath(str, @"{SAFARI}",
 				AppLocator.SafariPath, ctx);
+			// Edge executable cannot be run normally
 
 			return str;
 		}
@@ -124,19 +160,26 @@ namespace KeePass.Util
 
 		private static string FindInternetExplorer()
 		{
-			for(int i = 0; i < 4; ++i)
+			const string strIEDef = "SOFTWARE\\Clients\\StartMenuInternet\\IEXPLORE.EXE\\shell\\open\\command";
+			const string strIEWow = "SOFTWARE\\Wow6432Node\\Clients\\StartMenuInternet\\IEXPLORE.EXE\\shell\\open\\command";
+
+			for(int i = 0; i < 6; ++i)
 			{
 				RegistryKey k = null;
+
+				// https://msdn.microsoft.com/en-us/library/windows/desktop/dd203067.aspx
 				if(i == 0)
-					k = Registry.LocalMachine.OpenSubKey(
-						"SOFTWARE\\Clients\\StartMenuInternet\\IEXPLORE.EXE\\shell\\open\\command", false);
+					k = Registry.CurrentUser.OpenSubKey(strIEDef, false);
 				else if(i == 1)
-					k = Registry.LocalMachine.OpenSubKey(
-						"SOFTWARE\\Wow6432Node\\Clients\\StartMenuInternet\\IEXPLORE.EXE\\shell\\open\\command", false);
+					k = Registry.CurrentUser.OpenSubKey(strIEWow, false);
 				else if(i == 2)
+					k = Registry.LocalMachine.OpenSubKey(strIEDef, false);
+				else if(i == 3)
+					k = Registry.LocalMachine.OpenSubKey(strIEWow, false);
+				else if(i == 4)
 					k = Registry.ClassesRoot.OpenSubKey(
 						"IE.AssocFile.HTM\\shell\\open\\command", false);
-				else if(i == 3)
+				else
 					k = Registry.ClassesRoot.OpenSubKey(
 						"Applications\\iexplore.exe\\shell\\open\\command", false);
 
@@ -164,15 +207,15 @@ namespace KeePass.Util
 
 			try
 			{
-				string strPath = FindFirefoxPr(false);
+				string strPath = FindFirefoxWin(false);
 				if(!string.IsNullOrEmpty(strPath)) return strPath;
 			}
 			catch(Exception) { }
 
-			return FindFirefoxPr(true);
+			return FindFirefoxWin(true);
 		}
 
-		private static string FindFirefoxPr(bool bWowNode)
+		private static string FindFirefoxWin(bool bWowNode)
 		{
 			RegistryKey kFirefox = Registry.LocalMachine.OpenSubKey(bWowNode ?
 				"SOFTWARE\\Wow6432Node\\Mozilla\\Mozilla Firefox" :
@@ -182,8 +225,23 @@ namespace KeePass.Util
 			string strCurVer = (kFirefox.GetValue("CurrentVersion") as string);
 			if(string.IsNullOrEmpty(strCurVer))
 			{
-				kFirefox.Close();
-				return null;
+				// The ESR version stores the 'CurrentVersion' value under
+				// 'Mozilla Firefox ESR', but the version-specific info
+				// under 'Mozilla Firefox\\<Version>' (without 'ESR')
+				RegistryKey kESR = Registry.LocalMachine.OpenSubKey(bWowNode ?
+					"SOFTWARE\\Wow6432Node\\Mozilla\\Mozilla Firefox ESR" :
+					"SOFTWARE\\Mozilla\\Mozilla Firefox ESR", false);
+				if(kESR != null)
+				{
+					strCurVer = (kESR.GetValue("CurrentVersion") as string);
+					kESR.Close();
+				}
+
+				if(string.IsNullOrEmpty(strCurVer))
+				{
+					kFirefox.Close();
+					return null;
+				}
 			}
 
 			RegistryKey kMain = kFirefox.OpenSubKey(strCurVer + "\\Main", false);
@@ -211,16 +269,25 @@ namespace KeePass.Util
 		{
 			if(NativeLib.IsUnix()) return FindAppUnix("opera");
 
-			for(int i = 0; i < 2; ++i)
+			// Old Opera versions
+			const string strOp12 = "SOFTWARE\\Clients\\StartMenuInternet\\Opera\\shell\\open\\command";
+			// Opera >= 20.0.1387.77
+			const string strOp20 = "SOFTWARE\\Clients\\StartMenuInternet\\OperaStable\\shell\\open\\command";
+
+			for(int i = 0; i < 5; ++i)
 			{
 				RegistryKey k = null;
-				if(i == 0) // Opera 20.0.1387.77
-					k = Registry.LocalMachine.OpenSubKey(
-						"SOFTWARE\\Clients\\StartMenuInternet\\OperaStable\\shell\\open\\command", false);
-				// else if(i == 1) // Old
-				//	k = Registry.LocalMachine.OpenSubKey(
-				//		"SOFTWARE\\Clients\\StartMenuInternet\\Opera\\shell\\open\\command", false);
-				else if(i == 1) // Old
+
+				// https://msdn.microsoft.com/en-us/library/windows/desktop/dd203067.aspx
+				if(i == 0)
+					k = Registry.CurrentUser.OpenSubKey(strOp20, false);
+				else if(i == 1)
+					k = Registry.CurrentUser.OpenSubKey(strOp12, false);
+				else if(i == 2)
+					k = Registry.LocalMachine.OpenSubKey(strOp20, false);
+				else if(i == 3)
+					k = Registry.LocalMachine.OpenSubKey(strOp12, false);
+				else // Old Opera versions
 					k = Registry.ClassesRoot.OpenSubKey(
 						"Opera.HTML\\shell\\open\\command", false);
 
@@ -329,6 +396,30 @@ namespace KeePass.Util
 
 			kSafari.Close();
 			return strPath;
+		}
+
+		private static string FindEdge()
+		{
+			string strSys = Environment.SystemDirectory.TrimEnd(
+				UrlUtil.LocalDirSepChar);
+			if(strSys.EndsWith("32"))
+				strSys = strSys.Substring(0, strSys.Length - 2);
+			strSys += "Apps";
+
+			if(!Directory.Exists(strSys)) return null;
+
+			string[] vEdgeDirs = Directory.GetDirectories(strSys,
+				"Microsoft.MicrosoftEdge*", SearchOption.TopDirectoryOnly);
+			if(vEdgeDirs == null) { Debug.Assert(false); return null; }
+
+			foreach(string strEdgeDir in vEdgeDirs)
+			{
+				string strExe = UrlUtil.EnsureTerminatingSeparator(
+					strEdgeDir, false) + "MicrosoftEdge.exe";
+				if(File.Exists(strExe)) return strExe;
+			}
+
+			return null;
 		}
 
 		public static string FindAppUnix(string strApp)

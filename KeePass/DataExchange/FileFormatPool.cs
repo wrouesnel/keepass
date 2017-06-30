@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
+using System.Text;
 
 using KeePass.DataExchange.Formats;
+
+using KeePassLib.Utility;
 
 namespace KeePass.DataExchange
 {
@@ -102,10 +104,16 @@ namespace KeePass.DataExchange
 			m_vFormats.Add(new KeePassKdb1x());
 			m_vFormats.Add(new KeePassKdb2x());
 			m_vFormats.Add(new KeePassKdb2xRepair());
+			m_vFormats.Add(new KeePassKdb2x3());
 			m_vFormats.Add(new KeePassXml1x());
 			m_vFormats.Add(new KeePassXml2x());
 
 			m_vFormats.Add(new GenericCsv());
+
+			m_vFormats.Add(new KeePassHtml2x());
+			m_vFormats.Add(new XslTransform2x());
+			m_vFormats.Add(new WinFavorites10(false));
+			m_vFormats.Add(new WinFavorites10(true));
 
 			m_vFormats.Add(new OnePwProCsv599());
 			m_vFormats.Add(new AmpXml250());
@@ -113,15 +121,18 @@ namespace KeePass.DataExchange
 			m_vFormats.Add(new CodeWalletTxt605());
 			m_vFormats.Add(new DashlaneCsv2());
 			m_vFormats.Add(new DataVaultCsv47());
-			m_vFormats.Add(new DesktopKnox32());
+			m_vFormats.Add(new DesktopKnoxXml32());
+			m_vFormats.Add(new EnpassTxt5());
 			m_vFormats.Add(new FlexWalletXml17());
 			m_vFormats.Add(new HandySafeTxt512());
 			m_vFormats.Add(new HandySafeProXml12());
 			m_vFormats.Add(new KasperskyPwMgrXml50());
 			m_vFormats.Add(new KeePassXXml041());
 			m_vFormats.Add(new LastPassCsv2());
+			m_vFormats.Add(new MSecureCsv355());
 			m_vFormats.Add(new NetworkPwMgrCsv4());
 			m_vFormats.Add(new NortonIdSafeCsv2013());
+			m_vFormats.Add(new NPasswordNpw102());
 			m_vFormats.Add(new PassKeeper12());
 			m_vFormats.Add(new PpKeeperHtml270());
 			m_vFormats.Add(new PwAgentXml234());
@@ -130,6 +141,7 @@ namespace KeePass.DataExchange
 			m_vFormats.Add(new PwMemory2008Xml104());
 			m_vFormats.Add(new PwPrompterDat12());
 			m_vFormats.Add(new PwSafeXml302());
+			m_vFormats.Add(new PwSaverXml412());
 			m_vFormats.Add(new PwsPlusCsv1007());
 			m_vFormats.Add(new PwTresorXml100());
 			m_vFormats.Add(new PVaultTxt14());
@@ -152,10 +164,21 @@ namespace KeePass.DataExchange
 
 			m_vFormats.Add(new Spamex20070328());
 
-			m_vFormats.Add(new KeePassHtml2x());
-			m_vFormats.Add(new XslTransform2x());
-			m_vFormats.Add(new WinFavorites10(false));
-			m_vFormats.Add(new WinFavorites10(true));
+#if DEBUG
+			// Ensure name uniqueness
+			for(int i = 0; i < m_vFormats.Count; ++i)
+			{
+				FileFormatProvider pi = m_vFormats[i];
+				for(int j = i + 1; j < m_vFormats.Count; ++j)
+				{
+					FileFormatProvider pj = m_vFormats[j];
+					Debug.Assert(!string.Equals(pi.FormatName, pj.FormatName, StrUtil.CaseIgnoreCmp));
+					Debug.Assert(!string.Equals(pi.FormatName, pj.DisplayName, StrUtil.CaseIgnoreCmp));
+					Debug.Assert(!string.Equals(pi.DisplayName, pj.FormatName, StrUtil.CaseIgnoreCmp));
+					Debug.Assert(!string.Equals(pi.DisplayName, pj.DisplayName, StrUtil.CaseIgnoreCmp));
+				}
+			}
+#endif
 		}
 
 		public void Add(FileFormatProvider prov)
@@ -184,9 +207,19 @@ namespace KeePass.DataExchange
 
 			EnsurePoolInitialized();
 
+			// Format and display names may differ (e.g. the Generic
+			// CSV Importer has a different format name)
+
 			foreach(FileFormatProvider f in m_vFormats)
 			{
-				if(f.FormatName == strFormatName) return f;
+				if(string.Equals(strFormatName, f.DisplayName, StrUtil.CaseIgnoreCmp))
+					return f;
+			}
+
+			foreach(FileFormatProvider f in m_vFormats)
+			{
+				if(string.Equals(strFormatName, f.FormatName, StrUtil.CaseIgnoreCmp))
+					return f;
 			}
 
 			return null;

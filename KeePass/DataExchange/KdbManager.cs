@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,11 @@
 #endif
 
 using System;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+
+using KeePassLib.Utility;
 
 namespace KeePass.DataExchange
 {
@@ -370,28 +372,55 @@ namespace KeePass.DataExchange
 		/// <summary>
 		/// Convert the current <c>KdbTime</c> object to a <c>DateTime</c> object.
 		/// </summary>
-		/// <returns></returns>
 		public DateTime ToDateTime()
 		{
 			if((this.Year == 0) || (this.Month == 0) || (this.Day == 0))
-				return DateTime.Now;
+				return DateTime.UtcNow;
 
-			return new DateTime((int)this.Year, (int)this.Month, (int)this.Day,
-				(int)this.Hour, (int)this.Minute, (int)this.Second);
+			// https://sourceforge.net/p/keepass/discussion/329221/thread/07599afd/
+			try
+			{
+				int dy = (int)this.Year;
+				if(dy > 2999) { Debug.Assert(false); dy = 2999; }
+
+				int dm = (int)this.Month;
+				if(dm > 12) { Debug.Assert(false); dm = 12; }
+
+				int dd = (int)this.Day;
+				if(dd > 31) { Debug.Assert(false); dd = 28; }
+				// Day might not exist in month
+
+				int th = (int)this.Hour;
+				if(th > 23) { Debug.Assert(false); th = 23; }
+
+				int tm = (int)this.Minute;
+				if(tm > 59) { Debug.Assert(false); tm = 59; }
+
+				int ts = (int)this.Second;
+				if(ts > 59) { Debug.Assert(false); ts = 59; }
+
+				return (new DateTime(dy, dm, dd, th, tm, ts,
+					DateTimeKind.Local)).ToUniversalTime();
+			}
+			catch(Exception) { Debug.Assert(false); }
+
+			return DateTime.UtcNow;
 		}
 
 		/// <summary>
-		/// Copy data from a <c>DateTime object</c> to the current <c>KdbTime</c> object.
+		/// Copy data from a <c>DateTime</c> object to the current <c>KdbTime</c> object.
 		/// </summary>
 		/// <param name="dt">Data source.</param>
 		public void Set(DateTime dt)
 		{
-			this.Year = (UInt16)dt.Year;
-			this.Month = (Byte)dt.Month;
-			this.Day = (Byte)dt.Day;
-			this.Hour = (Byte)dt.Hour;
-			this.Minute = (Byte)dt.Minute;
-			this.Second = (Byte)dt.Second;
+			DateTime dtLocal = TimeUtil.ToLocal(dt, true);
+
+			this.Year = (UInt16)dtLocal.Year;
+			this.Month = (Byte)dtLocal.Month;
+			this.Day = (Byte)dtLocal.Day;
+			this.Hour = (Byte)dtLocal.Hour;
+			this.Minute = (Byte)dtLocal.Minute;
+			this.Second = (Byte)dtLocal.Second;
 		}
 
 		/// <summary>

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ namespace KeePass.UI
 	{
 		private RichTextBox m_rtb = null;
 		private Form m_form = null;
-		private ContextMenuStrip m_ctx = null;
+		private CustomContextMenuStripEx m_ctx = null;
 		private ToolStripItem[] m_vMenuItems =
 			new ToolStripItem[(int)RtbCtxCommands.Count];
 		private string m_strCurLink = string.Empty;
@@ -55,7 +55,8 @@ namespace KeePass.UI
 
 		~RichTextBoxContextMenu()
 		{
-			Detach();
+			try { Detach(); }
+			catch(Exception) { Debug.Assert(false); }
 		}
 
 		[Obsolete]
@@ -96,13 +97,15 @@ namespace KeePass.UI
 			}
 		}
 
-		private ContextMenuStrip CreateContextMenu()
+		private CustomContextMenuStripEx CreateContextMenu()
 		{
 			CustomContextMenuStripEx ctx = new CustomContextMenuStripEx();
 			int iPos = -1;
 
-			m_vMenuItems[++iPos] = ctx.Items.Add(KPRes.Undo,
+			ToolStripItem tsiUndo = ctx.Items.Add(KPRes.Undo,
 				Properties.Resources.B16x16_Undo, this.OnUndoCommand);
+			tsiUndo.RightToLeftAutoMirrorImage = true;
+			m_vMenuItems[++iPos] = tsiUndo;
 			ctx.Items.Add(new ToolStripSeparator());
 
 			m_vMenuItems[++iPos] = ctx.Items.Add(KPRes.Cut,
@@ -115,8 +118,10 @@ namespace KeePass.UI
 				Properties.Resources.B16x16_EditDelete, this.OnDeleteCommand);
 			ctx.Items.Add(new ToolStripSeparator());
 
-			m_vMenuItems[++iPos] = ctx.Items.Add(KPRes.CopyLink,
+			ToolStripItem tsiLink = ctx.Items.Add(KPRes.CopyLink,
 				Properties.Resources.B16x16_EditCopyLink, this.OnCopyLinkCommand);
+			tsiLink.RightToLeftAutoMirrorImage = true;
+			m_vMenuItems[++iPos] = tsiLink;
 			m_vMenuItems[++iPos] = ctx.Items.Add(KPRes.CopyAll,
 				Properties.Resources.B16x16_EditShred, this.OnCopyAllCommand);
 			m_vMenuItems[++iPos] = ctx.Items.Add(KPRes.SelectAll,

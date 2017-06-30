@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2014 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2017 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 using KeePass.App;
 using KeePass.App.Configuration;
@@ -35,6 +35,8 @@ using KeePass.Util;
 
 using KeePassLib;
 using KeePassLib.Utility;
+
+using NativeLib = KeePassLib.Native.NativeLib;
 
 namespace KeePass.Forms
 {
@@ -93,12 +95,11 @@ namespace KeePass.Forms
 
 			GlobalWindowManager.AddWindow(this);
 
-			this.Icon = Properties.Resources.KeePass;
+			this.Icon = AppIcons.Default;
 			this.DoubleBuffered = true;
 
-			string strRect = Program.Config.UI.DataEditorRect;
-			if(strRect.Length > 0) UIUtil.SetWindowScreenRect(this, strRect);
-			m_strInitialFormRect = UIUtil.GetWindowScreenRect(this);
+			m_strInitialFormRect = UIUtil.SetWindowScreenRectEx(this,
+				Program.Config.UI.DataEditorRect);
 
 			m_bdc = BinaryDataClassifier.Classify(m_strDataDesc, m_pbData);
 			uint uStartOffset;
@@ -109,6 +110,7 @@ namespace KeePass.Forms
 			{
 				strData = (seiGuess.Encoding.GetString(m_pbData, (int)uStartOffset,
 					m_pbData.Length - (int)uStartOffset) ?? string.Empty);
+				strData = StrUtil.ReplaceNulls(strData);
 			}
 			catch(Exception) { Debug.Assert(false); strData = string.Empty; }
 
@@ -147,32 +149,37 @@ namespace KeePass.Forms
 
 			InitFormattingToolBar();
 
-			bool bSimpleText = true;
+			bool bSimpleText = true, bDefaultFont = true;
 			if(m_bdc == BinaryDataClass.RichText)
 			{
 				try
 				{
-					if(strData.Length > 0) m_rtbText.Rtf = strData;
+					if(strData.Length > 0)
+					{
+						m_rtbText.Rtf = strData;
+						bDefaultFont = false;
+					}
 					else m_rtbText.Text = string.Empty;
 
 					bSimpleText = false;
 				}
 				catch(Exception) { } // Show as simple text
 			}
-			
+
 			if(bSimpleText)
 			{
 				m_rtbText.Text = strData;
 				m_rtbText.SimpleTextOnly = true;
 
-				if(Program.Config.UI.DataEditorFont.OverrideUIDefault)
-				{
-					m_rtbText.SelectAll();
-					m_rtbText.SelectionFont = Program.Config.UI.DataEditorFont.ToFont();
-				}
-
 				// CR is upgraded to CR+LF
 				m_bNewLinesWin = (StrUtil.GetNewLineSeq(strData) != "\n");
+			}
+			else m_menuViewFont.Text = KPRes.FontDefault + "...";
+
+			if(bDefaultFont && Program.Config.UI.DataEditorFont.OverrideUIDefault)
+			{
+				m_rtbText.SelectAll();
+				m_rtbText.SelectionFont = Program.Config.UI.DataEditorFont.ToFont();
 			}
 
 			m_rtbText.Select(0, 0);
@@ -196,7 +203,7 @@ namespace KeePass.Forms
 
 			m_tbFontCombo.ToolTipText = KPRes.Font;
 
-			int[] vSizes = new int[]{ 8, 9, 10, 11, 12, 14, 16, 18, 20,
+			int[] vSizes = new int[] { 8, 9, 10, 11, 12, 14, 16, 18, 20,
 				22, 24, 26, 28, 36, 48, 72 };
 			foreach(int nSize in vSizes)
 				m_tbFontSizeCombo.Items.Add(nSize.ToString());
@@ -213,7 +220,7 @@ namespace KeePass.Forms
 				(m_bModified ? "*" : string.Empty) + " - ") : string.Empty) +
 				PwDefs.ShortProductName + " " + KPRes.DataEditor);
 
-			m_menuViewFont.Enabled = (m_bdc == BinaryDataClass.Text);
+			// m_menuViewFont.Enabled = (m_bdc == BinaryDataClass.Text);
 			UIUtil.SetChecked(m_menuViewWordWrap, m_rtbText.WordWrap);
 
 			m_tbFileSave.Image = (m_bModified ? Properties.Resources.B16x16_FileSave :
@@ -291,7 +298,7 @@ namespace KeePass.Forms
 			Debug.Assert(m_uBlockEvents == 0);
 
 			string strRect = UIUtil.GetWindowScreenRect(this);
-			if(strRect != m_strInitialFormRect)
+			if(strRect != m_strInitialFormRect) // Don't overwrite ""
 				Program.Config.UI.DataEditorRect = strRect;
 
 			m_ctxText.Detach();
@@ -302,10 +309,40 @@ namespace KeePass.Forms
 		{
 			if((m_uBlockEvents > 0) || (m_bdc != BinaryDataClass.RichText)) return;
 
-			Font f = m_rtbText.SelectionFont;
-			if(f == null) return;
+			try
+			{
+				Font f = m_rtbText.SelectionFont;
+				if(f != null)
+					m_rtbText.SelectionFont = new Font(f, f.Style ^ fs);
+				else
+				{
+					NativeMethods.CHARFORMAT2 cf = UIUtil.RtfGetCharFormat(m_rtbText);
+					cf.dwMask = 0;
 
-			try { m_rtbText.SelectionFont = new Font(f, f.Style ^ fs); }
+					if((fs & FontStyle.Bold) != FontStyle.Regular)
+					{
+						cf.dwMask |= NativeMethods.CFM_BOLD;
+						cf.dwEffects ^= NativeMethods.CFE_BOLD;
+					}
+					if((fs & FontStyle.Italic) != FontStyle.Regular)
+					{
+						cf.dwMask |= NativeMethods.CFM_ITALIC;
+						cf.dwEffects ^= NativeMethods.CFE_ITALIC;
+					}
+					if((fs & FontStyle.Underline) != FontStyle.Regular)
+					{
+						cf.dwMask |= NativeMethods.CFM_UNDERLINE;
+						cf.dwEffects ^= NativeMethods.CFE_UNDERLINE;
+					}
+					if((fs & FontStyle.Strikeout) != FontStyle.Regular)
+					{
+						cf.dwMask |= NativeMethods.CFM_STRIKEOUT;
+						cf.dwEffects ^= NativeMethods.CFE_STRIKEOUT;
+					}
+
+					UIUtil.RtfSetCharFormat(m_rtbText, cf);
+				}
+			}
 			catch(Exception ex) { MessageService.ShowWarning(ex); }
 
 			UpdateUIState(true, true);
@@ -420,11 +457,20 @@ namespace KeePass.Forms
 		{
 			if((m_uBlockEvents > 0) || (m_bdc != BinaryDataClass.RichText)) return;
 
-			Font f = m_rtbText.SelectionFont;
 			try
 			{
-				m_rtbText.SelectionFont = new Font(m_tbFontCombo.Text, f.Size,
-					f.Style, f.Unit, f.GdiCharSet, f.GdiVerticalFont);
+				string strName = m_tbFontCombo.Text;
+
+				Font f = m_rtbText.SelectionFont;
+				if(f != null)
+					m_rtbText.SelectionFont = new Font(strName, f.Size,
+						f.Style, f.Unit, f.GdiCharSet, f.GdiVerticalFont);
+				else if(FontUtil.DefaultFont != null)
+					m_rtbText.SelectionFont = FontUtil.CreateFont(strName,
+						FontUtil.DefaultFont.SizeInPoints, FontStyle.Regular);
+				else
+					m_rtbText.SelectionFont = FontUtil.CreateFont(strName,
+						12.0f, FontStyle.Regular);
 			}
 			catch(Exception ex) { MessageService.ShowWarning(ex); }
 
@@ -435,14 +481,26 @@ namespace KeePass.Forms
 		{
 			if((m_uBlockEvents > 0) || (m_bdc != BinaryDataClass.RichText)) return;
 
-			Font f = m_rtbText.SelectionFont;
-			float fSize;
-			if(!float.TryParse(m_tbFontSizeCombo.Text, out fSize)) fSize = f.Size;
-
 			try
 			{
-				m_rtbText.SelectionFont = new Font(f.Name, fSize,
-					f.Style, f.Unit, f.GdiCharSet, f.GdiVerticalFont);
+				Font f = m_rtbText.SelectionFont;
+				float fSize;
+				if(!float.TryParse(m_tbFontSizeCombo.Text, out fSize))
+				{
+					if(f != null) fSize = f.SizeInPoints;
+					else if(FontUtil.DefaultFont != null)
+						fSize = FontUtil.DefaultFont.SizeInPoints;
+					else fSize = 12.0f;
+				}
+
+				if(f != null)
+					m_rtbText.SelectionFont = new Font(f.Name, fSize, f.Style,
+						GraphicsUnit.Point, f.GdiCharSet, f.GdiVerticalFont);
+				else if(!NativeLib.IsUnix())
+					UIUtil.RtfSetFontSize(m_rtbText, fSize);
+				else // Unix
+					m_rtbText.SelectionFont = FontUtil.CreateFont(
+						FontFamily.GenericSansSerif, fSize, FontStyle.Regular);
 			}
 			catch(Exception ex) { MessageService.ShowWarning(ex); }
 
@@ -528,12 +586,12 @@ namespace KeePass.Forms
 		{
 			if(keyData == Keys.Escape)
 			{
-				if(msg.Msg == NativeMethods.WM_KEYDOWN)
+				bool? obKeyDown = NativeMethods.IsKeyDownMessage(ref msg);
+				if(obKeyDown.HasValue)
 				{
-					this.Close();
+					if(obKeyDown.Value) this.Close();
 					return true;
 				}
-				else if(msg.Msg == NativeMethods.WM_KEYUP) return true;
 			}
 
 			return base.ProcessCmdKey(ref msg, keyData);
@@ -552,12 +610,15 @@ namespace KeePass.Forms
 				if(UIUtil.ShowDialogNotValue(dlg, DialogResult.OK)) return null;
 
 				Encoding enc = dlg.SelectedEncoding;
+				int iStart = (int)dlg.DataStartOffset;
 				UIUtil.DestroyForm(dlg);
 				if(enc != null)
 				{
 					try
 					{
-						string strText = enc.GetString(pbData);
+						string strText = (enc.GetString(pbData, iStart,
+							pbData.Length - iStart) ?? string.Empty);
+						strText = StrUtil.ReplaceNulls(strText);
 						return StrUtil.Utf8.GetBytes(strText);
 					}
 					catch(Exception) { Debug.Assert(false); }
